@@ -1,3 +1,5 @@
+#changing their given file for my purpose
+
 # -*- coding: utf-8 -*-
 """
 Created on: xxxx
@@ -75,6 +77,21 @@ from shapely.geometry.polygon import Polygon
 
 import warnings
 warnings.filterwarnings("ignore")
+
+#global constants
+turb_specs    =  {   
+                     'Name': 'Anon Name',
+                     'Vendor': 'Anon Vendor',
+                     'Type': 'Anon Type',
+                     'Dia (m)': 100,
+                     'Rotor Area (m2)': 7853,
+                     'Hub Height (m)': 100,
+                     'Cut-in Wind Speed (m/s)': 3.5,
+                     'Cut-out Wind Speed (m/s)': 25,
+                     'Rated Wind Speed (m/s)': 15,
+                     'Rated Power (MW)': 3
+                 }
+
 
 def getTurbLoc(turb_loc_file_name):
     """ 
@@ -464,33 +481,25 @@ def checkConstraints(turb_coords, turb_diam):
                 prox_constr_viol = True
                 break
     
+    #return success flag befor printing
+    return ((not peri_constr_viol) and (not prox_constr_viol)) 
     # print messages
-    if  peri_constr_viol  == True  and prox_constr_viol == True:
-          print('Somewhere both perimeter constraint and proximity constraint are violated\n')
-    elif peri_constr_viol == True  and prox_constr_viol == False:
-          print('Somewhere perimeter constraint is violated\n')
-    elif peri_constr_viol == False and prox_constr_viol == True:
-          print('Somewhere proximity constraint is violated\n')
-    else: print('Both perimeter and proximity constraints are satisfied !!\n')
+    # if  peri_constr_viol  == True  and prox_constr_viol == True:
+    #       print('Somewhere both perimeter constraint and proximity constraint are violated\n')
+    #       # return False
+    # elif peri_constr_viol == True  and prox_constr_viol == False:
+    #       print('Somewhere perimeter constraint is violated\n')
+    # elif peri_constr_viol == False and prox_constr_viol == True:
+    #       print('Somewhere proximity constraint is violated\n')
+    # else: print('Both perimeter and proximity constraints are satisfied !!\n')
         
-    return()
+    # return()
 
 if __name__ == "__main__":
 
     # Turbine Specifications.
     # -**-SHOULD NOT BE MODIFIED-**-
-    turb_specs    =  {   
-                         'Name': 'Anon Name',
-                         'Vendor': 'Anon Vendor',
-                         'Type': 'Anon Type',
-                         'Dia (m)': 100,
-                         'Rotor Area (m2)': 7853,
-                         'Hub Height (m)': 100,
-                         'Cut-in Wind Speed (m/s)': 3.5,
-                         'Cut-out Wind Speed (m/s)': 25,
-                         'Rated Wind Speed (m/s)': 15,
-                         'Rated Power (MW)': 3
-                     }
+
     turb_diam      =  turb_specs['Dia (m)']
     turb_rad       =  turb_diam/2 
     
