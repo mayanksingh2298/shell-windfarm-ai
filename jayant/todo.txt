@@ -1,0 +1,2 @@
+1. Decay EPSILON
+2. Random Restarts
