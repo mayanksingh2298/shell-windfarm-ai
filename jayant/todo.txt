@@ -1,7 +1,12 @@
 1. Decay EPSILON
 2. Random Restarts
 3. Store visual depiction when reaches local optima, and mark 400m radius ke circles on everyone
-
+4. beech mei we can randomly send someone to another place where it doesnt cause a problem
 Consider
+5. combine probabilities of all 7 files
 
 1. Numerical Optimisation Techniques, we have 100 parameters
+
+2. another algo would find a circle of diameter 800m, and then choose one of the 50 to take this spot aisa kuch, shuffling the empty spaces, this is a new way of viewing transitions
+
+3. In each step i could also shift the guy to the best position across the grid, dekhna padega complexity etc

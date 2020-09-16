@@ -72,8 +72,8 @@ import numpy  as np
 # import pandas as pd                     
 from   math   import radians as DegToRad       # Degrees to radians Conversion
 
-from shapely.geometry import Point             # Imported for constraint checking
-from shapely.geometry.polygon import Polygon
+# from shapely.geometry import Point             # Imported for constraint checking
+# from shapely.geometry.polygon import Polygon
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -460,15 +460,23 @@ def checkConstraints(turb_coords, turb_diam):
     peri_constr_viol = False
     
     # create a shapely polygon object of the wind farm
-    farm_peri = [(0, 0), (0, 4000), (4000, 4000), (4000, 0)]
-    farm_poly = Polygon(farm_peri)
+    # farm_peri = [(0, 0), (0, 4000), (4000, 4000), (4000, 0)]
+    # farm_poly = Polygon(farm_peri)
     
     # checks if for every turbine perimeter constraint is satisfied. 
     # breaks out if False anywhere
     for turb in turb_coords:
-        turb = Point(turb)
-        inside_farm   = farm_poly.contains(turb)
-        correct_clrnc = farm_poly.boundary.distance(turb) >= bound_clrnc
+        x,y = turb
+        # turb = Point(turb)
+        # inside_farm2 = farm_poly.contains(turb)
+        inside_farm = ((0 < x < 4000) and (0 < y < 4000))
+        correct_clrnc = min(4000 - x, x, y, 4000-y) >= bound_clrnc
+        # correct_clrnc2 = farm_poly.boundary.distance(turb) >= bound_clrnc
+
+        # if correct_clrnc!=correct_clrnc2 or inside_farm != inside_farm2:
+        #     print("ERROR")
+        #     breakpoint()
+
         if (inside_farm == False or correct_clrnc == False):
             peri_constr_viol = True
             break
