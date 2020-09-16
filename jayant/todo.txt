@@ -1,2 +1,7 @@
 1. Decay EPSILON
 2. Random Restarts
+3. Store visual depiction when reaches local optima, and mark 400m radius ke circles on everyone
+
+Consider
+
+1. Numerical Optimisation Techniques, we have 100 parameters

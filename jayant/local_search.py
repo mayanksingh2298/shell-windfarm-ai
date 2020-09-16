@@ -3,11 +3,13 @@ import numpy as np
 from evaluate import turb_specs, checkConstraints, binWindResourceData, getAEP, loadPowerCurve, getTurbLoc, preProcessing
 from datetime import datetime
 import random
+from args import make_args
 
+args = make_args()
 MINIMUM = -10**10
-EPSILON = 30
+EPSILON = args.step
 RANDOM_RESTART_THRESH = 100
-DIRECTIONS = 12
+DIRECTIONS = args.directions
 
 def save_csv(coords):
 	f = open("submissions/temp_{}_avg_aep_{}m_jump_{}_directions_{}_iterations_{}.csv"
@@ -16,6 +18,8 @@ def save_csv(coords):
 	f.close()
 
 def initialise_valid():
+	#for now return the same everytime to compare methods etc
+	return getTurbLoc('../data/turbine_loc_test.csv')
 	# this can be done quicker with matrix operations
 	# 50 <= x,y <= 3950
 	# define an 9x9 grid, choose 50 out of 81 boxes to fill
@@ -83,6 +87,8 @@ while(True):
 		iters_with_no_inc = 0
 		iteration = 0
 		num_restarts += 1
+		coords = initialise_valid()
+
 	total_iterations += 1
 	iteration += 1
 	chosen = np.random.randint(0,50) #50 is not included
