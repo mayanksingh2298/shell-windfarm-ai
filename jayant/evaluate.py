@@ -77,20 +77,8 @@ from   math   import radians as DegToRad       # Degrees to radians Conversion
 
 import warnings
 warnings.filterwarnings("ignore")
+# from constants import *
 
-#global constants
-turb_specs    =  {   
-                     'Name': 'Anon Name',
-                     'Vendor': 'Anon Vendor',
-                     'Type': 'Anon Type',
-                     'Dia (m)': 100,
-                     'Rotor Area (m2)': 7853,
-                     'Hub Height (m)': 100,
-                     'Cut-in Wind Speed (m/s)': 3.5,
-                     'Cut-out Wind Speed (m/s)': 25,
-                     'Rated Wind Speed (m/s)': 15,
-                     'Rated Power (MW)': 3
-                 }
 
 
 def getTurbLoc(turb_loc_file_name):
