@@ -1,7 +1,7 @@
-Readme.md
 
 
-#Local Search
+
+# Local Search
 
 python local_search.py
 
@@ -12,7 +12,7 @@ Windmill sampled uniformly from all windmills
 Best Non-negative Change done if any
 
 
-#Manual Placing
+# Manual Placing
 
 python manual_placing.py
 
