@@ -319,7 +319,7 @@ def preProcessing(power_curve):
 
 
 def getAEP(turb_rad, turb_coords, power_curve, wind_inst_freq, 
-            n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t):
+            n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t, get_each_turbine_power = False):
     
     """
     -**-THIS FUNCTION SHOULD NOT BE MODIFIED-**-
@@ -408,10 +408,14 @@ def getAEP(turb_rad, turb_coords, power_curve, wind_inst_freq,
     indices = searchSorted(power_curve[:,0], wind_sped_eff.ravel())
     power   = power_curve[indices,2]
     power   = power.reshape(n_wind_instances,n_turbs)
+
+    if(get_each_turbine_power):
+        each_turbine_power = np.matmul(power.T,wind_inst_freq.reshape([-1,1]))
     
     # Farm power for single wind instance 
     power   = np.sum(power, axis=1)
-    
+
+
     # multiply the respective values with the wind instance probabilities 
     # year_hours = 8760.0
     AEP = 8760.0*np.sum(power*wind_inst_freq)
@@ -419,7 +423,10 @@ def getAEP(turb_rad, turb_coords, power_curve, wind_inst_freq,
     # Convert MWh to GWh
     AEP = AEP/1e3
     
-    return(AEP)
+    if(not get_each_turbine_power):
+        return(AEP)
+    else:
+        return AEP,each_turbine_power
     
 
     
