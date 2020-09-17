@@ -69,8 +69,8 @@ if __name__ == "__main__":
 
 	# sys.exit()
 
-	coords = initialise_periphery()
-	# coords = initialise_valid()
+	# coords = initialise_periphery()
+	coords = initialise_valid()
 
 	DELTA = (2*np.pi)/DIRECTIONS
 
