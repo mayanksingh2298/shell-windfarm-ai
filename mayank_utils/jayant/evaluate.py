@@ -1,4 +1,5 @@
-import sys
+#changing their given file for my purpose
+
 # -*- coding: utf-8 -*-
 """
 Created on: xxxx
@@ -71,10 +72,14 @@ import numpy  as np
 # import pandas as pd                     
 from   math   import radians as DegToRad       # Degrees to radians Conversion
 
-from shapely.geometry import Point             # Imported for constraint checking
-from shapely.geometry.polygon import Polygon
+# from shapely.geometry import Point             # Imported for constraint checking
+# from shapely.geometry.polygon import Polygon
+
 import warnings
 warnings.filterwarnings("ignore")
+# from constants import *
+
+
 
 def getTurbLoc(turb_loc_file_name):
     """ 
@@ -350,7 +355,7 @@ def getAEP(turb_rad, turb_coords, power_curve, wind_inst_freq,
     """
     # number of turbines
     n_turbs        =   turb_coords.shape[0]
-    assert n_turbs ==  50, "Error! Number of turbines is not 50."
+    # assert n_turbs ==  50, "Error! Number of turbines is not 50."
     
     # Prepare the rotated coordinates wrt the wind direction i.e downwind(x) & crosswind(y) 
     # coordinates wrt to the wind direction for each direction in wind_instances array
@@ -361,31 +366,23 @@ def getAEP(turb_rad, turb_coords, power_curve, wind_inst_freq,
     rotate_coords[:,:,1] =  np.matmul(sin_dir, np.transpose(turb_coords[:,0].reshape(n_turbs,1))) +\
                            np.matmul(cos_dir, np.transpose(turb_coords[:,1].reshape(n_turbs,1)))
  
+    
     # x_dist - x dist between turbine pairs wrt downwind/crosswind coordinates)
     # for each wind instance
-    # import ipdb
-    # ipdb.set_trace()
-    tmp = rotate_coords[:,:,0,np.newaxis]
-    x_dist = tmp - tmp.transpose([0,2,1])
-
-    tmp = rotate_coords[:,:,1,np.newaxis]
-    y_dist = np.abs(tmp - tmp.transpose([0,2,1]))
-
-    # x_dist1 = np.zeros((n_wind_instances,n_turbs,n_turbs), dtype=np.float32)
-    # for i in range(n_wind_instances):
-    #     tmp = rotate_coords[i,:,0].repeat(n_turbs).reshape(n_turbs, n_turbs)
-    #     x_dist1[i] = tmp - tmp.transpose()
+    x_dist = np.zeros((n_wind_instances,n_turbs,n_turbs), dtype=np.float32)
+    for i in range(n_wind_instances):
+        tmp = rotate_coords[i,:,0].repeat(n_turbs).reshape(n_turbs, n_turbs)
+        x_dist[i] = tmp - tmp.transpose()
     
 
-    # # y_dist - y dist between turbine pairs wrt downwind/crosswind coordinates)
-    # # for each wind instance    
-    # y_dist1 = np.zeros((n_wind_instances,n_turbs,n_turbs), dtype=np.float32)
-    # for i in range(n_wind_instances):
-    #     tmp = rotate_coords[i,:,1].repeat(n_turbs).reshape(n_turbs, n_turbs)
-    #     y_dist1[i] = tmp - tmp.transpose()
-    # y_dist1 = np.abs(y_dist1) 
-
-    # assert np.sum(x_dist - x_dist1) == 0 and np.sum(y_dist - y_dist1) == 0, "Calculation not correct" 
+    # y_dist - y dist between turbine pairs wrt downwind/crosswind coordinates)
+    # for each wind instance    
+    y_dist = np.zeros((n_wind_instances,n_turbs,n_turbs), dtype=np.float32)
+    for i in range(n_wind_instances):
+        tmp = rotate_coords[i,:,1].repeat(n_turbs).reshape(n_turbs, n_turbs)
+        y_dist[i] = tmp - tmp.transpose()
+    y_dist = np.abs(y_dist) 
+     
 
     # Now use element wise operations to calculate speed deficit.
     # kw, wake decay constant presetted to 0.05
@@ -395,15 +392,18 @@ def getAEP(turb_rad, turb_coords, power_curve, wind_inst_freq,
     # For some values of x_dist here RuntimeWarning: divide by zero may occur
     # That occurs for negative x_dist. Those we anyway mark as zeros. 
     sped_deficit = (1-np.sqrt(1-C_t))*((turb_rad/(turb_rad + 0.05*x_dist))**2) 
-    sped_deficit[((x_dist <= 0) | ((x_dist > 0) & (y_dist > (turb_rad + 0.05*x_dist))))] = 0.0    
+    sped_deficit[((x_dist <= 0) | ((x_dist > 0) & (y_dist > (turb_rad + 0.05*x_dist))))] = 0.0
+    
     
     # Calculate Total speed deficit from all upstream turbs, using sqrt of sum of sqrs
     sped_deficit_eff  = np.sqrt(np.sum(np.square(sped_deficit), axis = 2))
+
     
     # Element wise multiply the above with (1- sped_deficit_eff) to get
     # effective windspeed due to the happening wake
     wind_sped_eff     = wind_sped_stacked*(1.0-sped_deficit_eff)
 
+    
     # Estimate power from power_curve look up for wind_sped_eff
     indices = searchSorted(power_curve[:,0], wind_sped_eff.ravel())
     power   = power_curve[indices,2]
@@ -448,18 +448,26 @@ def checkConstraints(turb_coords, turb_diam):
     peri_constr_viol = False
     
     # create a shapely polygon object of the wind farm
-    farm_peri = [(0, 0), (0, 4000), (4000, 4000), (4000, 0)]
-    farm_poly = Polygon(farm_peri)
+    # farm_peri = [(0, 0), (0, 4000), (4000, 4000), (4000, 0)]
+    # farm_poly = Polygon(farm_peri)
     
     # checks if for every turbine perimeter constraint is satisfied. 
     # breaks out if False anywhere
     for turb in turb_coords:
-        turb = Point(turb)
-        inside_farm   = farm_poly.contains(turb)
-        correct_clrnc = farm_poly.boundary.distance(turb) >= bound_clrnc
+        x,y = turb
+        # turb = Point(turb)
+        # inside_farm2 = farm_poly.contains(turb)
+        inside_farm = ((0 < x < 4000) and (0 < y < 4000))
+        correct_clrnc = min(4000 - x, x, y, 4000-y) >= bound_clrnc
+        # correct_clrnc2 = farm_poly.boundary.distance(turb) >= bound_clrnc
+
+        # if correct_clrnc!=correct_clrnc2 or inside_farm != inside_farm2:
+        #     print("ERROR")
+        #     breakpoint()
+
         if (inside_farm == False or correct_clrnc == False):
             peri_constr_viol = True
-            print("Peri violation:",turb)    
+            print("Peri violation:",turb)
             break
     
     # checks if for every turbines proximity constraint is satisfied. 
@@ -471,50 +479,38 @@ def checkConstraints(turb_coords, turb_diam):
                 print("Proxim violation:",turb1,turb2)
                 break
     
+    #return success flag befor printing
+    return ((not peri_constr_viol) and (not prox_constr_viol)) 
     # print messages
-    if  peri_constr_viol  == True  and prox_constr_viol == True:
-          print('Somewhere both perimeter constraint and proximity constraint are violated\n')
-    elif peri_constr_viol == True  and prox_constr_viol == False:
-          print('Somewhere perimeter constraint is violated\n')
-    elif peri_constr_viol == False and prox_constr_viol == True:
-          print('Somewhere proximity constraint is violated\n')
-    else: print('Both perimeter and proximity constraints are satisfied !!\n')
+    # if  peri_constr_viol  == True  and prox_constr_viol == True:
+    #       print('Somewhere both perimeter constraint and proximity constraint are violated\n')
+    #       # return False
+    # elif peri_constr_viol == True  and prox_constr_viol == False:
+    #       print('Somewhere perimeter constraint is violated\n')
+    # elif peri_constr_viol == False and prox_constr_viol == True:
+    #       print('Somewhere proximity constraint is violated\n')
+    # else: print('Both perimeter and proximity constraints are satisfied !!\n')
         
-    return()
+    # return()
 
 if __name__ == "__main__":
+
     # Turbine Specifications.
     # -**-SHOULD NOT BE MODIFIED-**-
-    turb_specs    =  {   
-                         'Name': 'Anon Name',
-                         'Vendor': 'Anon Vendor',
-                         'Type': 'Anon Type',
-                         'Dia (m)': 100,
-                         'Rotor Area (m2)': 7853,
-                         'Hub Height (m)': 100,
-                         'Cut-in Wind Speed (m/s)': 3.5,
-                         'Cut-out Wind Speed (m/s)': 25,
-                         'Rated Wind Speed (m/s)': 15,
-                         'Rated Power (MW)': 3
-                     }
+
     turb_diam      =  turb_specs['Dia (m)']
     turb_rad       =  turb_diam/2 
     
     # Turbine x,y coordinates
-    turb_coords   =  getTurbLoc(sys.argv[1])
+    turb_coords   =  getTurbLoc('../../data/turbine_loc_test.csv')
     
     # Load the power curve
-    power_curve   =  loadPowerCurve('../data/power_curve.csv')
+    power_curve   =  loadPowerCurve('../../data/power_curve.csv')
     
     # Pass wind data csv file location to function binWindResourceData.
     # Retrieve probabilities of wind instance occurence.
+    # wind_inst_freq =  binWindResourceData('../data/WindData/wind_data_2007.csv')   
     
-    years = [2007,2008,2009,2013,2014,2015,2017]
-    # years = [2007]
-
-    year_wise_dist = [binWindResourceData("../data/WindData/wind_data_{}.csv".format(year)) for year in years]
-    wind_inst_freq = np.mean(year_wise_dist, axis = 0)
-
     # Doing preprocessing to avoid the same repeating calculations. Record 
     # the required data for calculations. Do that once. Data are set up (shaped)
     # to assist vectorization. Used later in function totalAEP.
@@ -527,6 +523,10 @@ if __name__ == "__main__":
     checkConstraints(turb_coords, turb_diam)
     
     print('Calculating AEP......')
-    AEP = getAEP(turb_rad, turb_coords, power_curve, wind_inst_freq, 
-              n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t) 
-    print('Total power produced by the wind farm is: ', "%.12f"%(AEP), 'GWh')
+    # for i in range(100):
+    print("for the given dummy confirguration")
+    for year in [2007, 2008, 2009, 2013, 2014, 2015, 2017]:
+        wind_inst_freq =  binWindResourceData('../../data/WindData/wind_data_{}.csv'.format(year))   
+        AEP = getAEP(turb_rad, turb_coords, power_curve, wind_inst_freq, 
+                  n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t) 
+        print('Total power produced by the wind farm in ',year,' would have been: ', "%.12f"%(AEP), 'GWh')
