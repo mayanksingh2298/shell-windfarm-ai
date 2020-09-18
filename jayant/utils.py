@@ -1,5 +1,5 @@
 # utils.py
-from evaluate import checkConstraints, binWindResourceData, getAEP, loadPowerCurve, getTurbLoc, preProcessing
+from evaluate import checkConstraints, binWindResourceData, getAEP, loadPowerCurve, getTurbLoc, preProcessing, delta_AEP
 import numpy as np
 from constants import *
 import random
@@ -59,15 +59,29 @@ def initialise_periphery():
 	return np.array(data[:50])
 
 
-def score(coords, wind_inst_freq, to_print = False):
+def score(coords, wind_inst_freq, to_print = False, with_deficit = False):
 	success = checkConstraints(coords, turb_diam)
 	if not success:
 		return MINIMUM 
-	AEP = getAEP(turb_rad, coords, power_curve, wind_inst_freq, 
-		n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t) 
+	ret = getAEP(turb_rad, coords, power_curve, wind_inst_freq, 
+		n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t, with_deficit) 
+	if with_deficit:
+		AEP, deficit = ret
+	else:
+		AEP = ret
+
 	if to_print:
 		print('Average AEP over train years is {}', "%.12f"%(AEP), 'GWh')
-	return AEP
+
+	if with_deficit:
+		return AEP, deficit
+	else:
+		return AEP
+
+def delta_score(coords, wind_inst_freq, chosen, new_x, new_y, original_deficit):
+	return delta_AEP(turb_rad, coords, power_curve, wind_inst_freq, 
+	            n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t,
+	            chosen, new_x, new_y, original_deficit)
 
 def min_dist_from_rest(chosen, coords, new_x, new_y):
 	min_d = min([(new_x - coords[i][0])**2 + (new_y - coords[i][1])**2 if i!=chosen else MAXIMUM for i in range(50)])
