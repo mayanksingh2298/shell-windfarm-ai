@@ -262,7 +262,20 @@ def preProcessing(power_curve):
                             values for all speed instances. 
     """
     # number of turbines
+    n_turbs       =   50
     
+    # direction 'slices' in degrees
+    slices_drct   = np.roll(np.arange(10, 361, 10, dtype=np.float32), 1)
+    ## slices_drct   = [360, 10.0, 20.0.......340, 350]
+    n_slices_drct = slices_drct.shape[0]
+    
+    # speed 'slices'
+    slices_sped   = [0.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 
+                        18.0, 20.0, 22.0, 24.0, 26.0, 28.0, 30.0]
+    n_slices_sped = len(slices_sped)-1
+    
+    # number of wind instances
+    n_wind_instances = (n_slices_drct)*(n_slices_sped)
     
     # Create wind instances. There are two columns in the wind instance array
     # First Column - Wind Speed. Second Column - Wind Direction
@@ -521,10 +534,6 @@ if __name__ == "__main__":
     checkConstraints(turb_coords, turb_diam)
     
     print('Calculating AEP......')
-    # for i in range(100):
-    print("for the given dummy confirguration")
-    for year in [2007, 2008, 2009, 2013, 2014, 2015, 2017]:
-        wind_inst_freq =  binWindResourceData('../data/WindData/wind_data_{}.csv'.format(year))   
-        AEP = getAEP(turb_rad, turb_coords, power_curve, wind_inst_freq, 
-                  n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t) 
-        print('Total power produced by the wind farm in ',year,' would have been: ', "%.12f"%(AEP), 'GWh')\
+    AEP = getAEP(turb_rad, turb_coords, power_curve, wind_inst_freq, 
+              n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t) 
+    print('Total power produced by the wind farm is: ', "%.12f"%(AEP), 'GWh')
