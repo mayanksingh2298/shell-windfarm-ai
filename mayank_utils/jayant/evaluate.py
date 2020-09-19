@@ -324,7 +324,7 @@ def preProcessing(power_curve):
 
 
 def getAEP(turb_rad, turb_coords, power_curve, wind_inst_freq, 
-            n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t):
+            n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t,get_each_turbine_power=False):
     
     """
     -**-THIS FUNCTION SHOULD NOT BE MODIFIED-**-
@@ -409,6 +409,9 @@ def getAEP(turb_rad, turb_coords, power_curve, wind_inst_freq,
     power   = power_curve[indices,2]
     power   = power.reshape(n_wind_instances,n_turbs)
     
+    if(get_each_turbine_power):
+        each_turbine_power = np.matmul(power.T,wind_inst_freq.reshape([-1,1]))
+    
     # Farm power for single wind instance 
     power   = np.sum(power, axis=1)
     
@@ -419,7 +422,10 @@ def getAEP(turb_rad, turb_coords, power_curve, wind_inst_freq,
     # Convert MWh to GWh
     AEP = AEP/1e3
     
-    return(AEP)
+    if(not get_each_turbine_power):
+        return(AEP)
+    else:
+        return AEP,each_turbine_power
     
 
     
@@ -476,7 +482,7 @@ def checkConstraints(turb_coords, turb_diam):
         for turb2 in np.delete(turb_coords, i, axis=0):
             if  np.linalg.norm(turb1 - turb2) < 4*turb_diam:
                 prox_constr_viol = True
-                print("Proxim violation:",turb1,turb2)
+                # print("Proxim violation:",turb1,turb2)
                 break
     
     #return success flag befor printing

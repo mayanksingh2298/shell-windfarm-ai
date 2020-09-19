@@ -59,12 +59,12 @@ def initialise_periphery():
 	return np.array(data[:50])
 
 
-def score(coords, wind_inst_freq, to_print = False):
+def score(coords, wind_inst_freq, to_print = False, get_each_turbine_power=False):
 	success = checkConstraints(coords, turb_diam)
-	# if not success:
-	# 	return MINIMUM 
+	if not success:
+		return MINIMUM 
 	AEP = getAEP(turb_rad, coords, power_curve, wind_inst_freq, 
-		n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t) 
+		n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t, get_each_turbine_power=get_each_turbine_power) 
 	if to_print:
 		print('Average AEP over train years is {}', "%.12f"%(AEP), 'GWh')
 	return AEP
