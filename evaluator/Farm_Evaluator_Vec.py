@@ -262,7 +262,7 @@ def preProcessing(power_curve):
                             values for all speed instances. 
     """
     # number of turbines
-    n_turbs       =   50
+    global n_turbs
     
     # direction 'slices' in degrees
     slices_drct   = np.roll(np.arange(10, 361, 10, dtype=np.float32), 1)
@@ -349,8 +349,10 @@ def getAEP(turb_rad, turb_coords, power_curve, wind_inst_freq,
         wind farm AEP in Gigawatt Hours, GWh (float)
     """
     # number of turbines
-    n_turbs        =   turb_coords.shape[0]
-    assert n_turbs ==  50, "Error! Number of turbines is not 50."
+    global n_turbs
+    if n_turbs != 50:
+        print("Warning, number of turbines is not 50")
+    # assert n_turbs ==  50, "Error! Number of turbines is not 50."
     
     # Prepare the rotated coordinates wrt the wind direction i.e downwind(x) & crosswind(y) 
     # coordinates wrt to the wind direction for each direction in wind_instances array
@@ -509,6 +511,7 @@ if __name__ == "__main__":
     
     # Turbine x,y coordinates
     turb_coords   =  getTurbLoc(sys.argv[1])
+    n_turbs = turb_coords.shape[0]
     
     # Load the power curve
     power_curve   =  loadPowerCurve('../data/power_curve.csv')
