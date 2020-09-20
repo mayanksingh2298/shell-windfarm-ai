@@ -160,7 +160,7 @@ class LineBuilder:
 			a = a.T
 			# maxi = np.max(a)
 			a = np.kron(a, np.ones((int(self.delta/self.scale),int(self.delta/self.scale))))
-			print(a)
+			# print(a)
 			# a = a[:,:,np.newaxis].repeat(3,axis=2)
 			# a = (a / maxi) * 255
 			# a = a.astype(int)
