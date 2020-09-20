@@ -178,7 +178,7 @@ class LineBuilder:
 			# self.ax.invert_yaxis()
 			# plt.show()
 
-	def plot(self,x,y):
+	def plot(self,x,y, heatmap = True):
 		self.counter = self.counter + 1
 		self.ax.title.set_text('{} points marked'.format(self.counter))
 		self.xs.append(x)
@@ -190,35 +190,39 @@ class LineBuilder:
 		# self.ax.plot(self.xs,self.ys,color=self.color)
 		print("just marked {}, {}".format(self.scale*x, self.scale*y))
 		self.all_pts.append((x,y))
-		if 0<self.counter <= 50:
-			coords = np.array(self.all_pts)
-			self.n_turbs = coords.shape[0]
-			coords = self.scale*coords
-			self.plot_heatmap(coords)
-			self.line.figure.canvas.draw()
-			f = open("submissions/manual_partial_{}.csv".format(self.save_time), "w")
-			np.savetxt(f, coords, delimiter=',', header='x,y', comments='', fmt='%1.8f')
-			f.close()
-			full_path = os.path.abspath("submissions/manual_partial_{}.csv".format(self.save_time))
-			os.system("cd ../../evaluator/; python3 Farm_Evaluator_Vec.py " + full_path)
+		if (heatmap):
+			if 0<self.counter <= 50:
+				coords = np.array(self.all_pts)
+				self.n_turbs = coords.shape[0]
+				coords = self.scale*coords
+				self.plot_heatmap(coords)
+				self.line.figure.canvas.draw()
+				f = open("submissions/manual_partial_{}.csv".format(self.save_time), "w")
+				np.savetxt(f, coords, delimiter=',', header='x,y', comments='', fmt='%1.8f')
+				f.close()
+				full_path = os.path.abspath("submissions/manual_partial_{}.csv".format(self.save_time))
+				os.system("cd ../../evaluator/; python3 Farm_Evaluator_Vec.py " + full_path)
 
-		if self.counter == 50:
-			s = score(coords, wind_inst_freq, True)
-			print(s)
-			print("done!")
-			f = open("submissions/manual_{}_score_{}.csv".format(s, self.save_time), "w")
-			np.savetxt(f, coords, delimiter=',', header='x,y', comments='', fmt='%1.8f')
-			f.close()
+			if self.counter == 50:
+				s = score(coords, wind_inst_freq, True)
+				print(s)
+				print("done!")
+				f = open("submissions/manual_{}_score_{}.csv".format(s, self.save_time), "w")
+				np.savetxt(f, coords, delimiter=',', header='x,y', comments='', fmt='%1.8f')
+				f.close()
 
 		return dot_pointer,circle_pointer
 
 	def load(self,path):
 		coords = getTurbLoc(path).tolist()
-		for (x,y) in coords:
-			dot_pointer,circle_pointer = self.plot(x,y)
+		for i,(x,y) in enumerate(coords):
+			x /= self.scale
+			y /= self.scale
+			flag = i==len(coords)-1
+			dot_pointer,circle_pointer = self.plot(x,y,heatmap=flag)
 			self.pointer[(x,y)] = (dot_pointer,circle_pointer)
-		if(len(self.all_pts)==50):	 
-			print(score(np.array(self.all_pts),wind_inst_freq))
+		# if(len(self.all_pts)==50):	 
+		# 	print(score(np.array(self.all_pts),wind_inst_freq))
 
 
 
@@ -245,6 +249,12 @@ class LineBuilder:
 					del self.pointer[(xi,yi)]
 					self.counter -= 1
 					self.all_pts.remove((xi,yi))
+
+					coords = np.array(self.all_pts)
+					self.n_turbs = coords.shape[0]
+					coords = self.scale*coords
+					self.plot_heatmap(coords)
+					
 					self.line.figure.canvas.draw()
 					return
 		# if self.counter == 0:
