@@ -58,6 +58,26 @@ def initialise_periphery():
 	# random.shuffle(data)
 	return np.array(data[:50])
 
+def initialise_max():
+	# import numpy as np
+	f = open('optimal_50.txt', 'r')
+
+	M_EPS = 1e-6
+
+	pts = []
+	for _ in range(50):
+		a = f.readline()
+		_, x, y = [float(i) for i in a.split()]
+		pts.append((x,y))
+
+	pts = np.array(pts)
+
+	# pts = 2*pts
+	pts = pts*(1/(1-(2-M_EPS)*(0.071377103865)))
+	# pts = 2*pts
+	pts = pts + 0.5
+	pts = 3900*pts + 50
+	return pts
 
 def score(coords, wind_inst_freq, to_print = False, with_deficit = False):
 	success = checkConstraints(coords, turb_diam)
@@ -87,3 +107,6 @@ def min_dist_from_rest(chosen, coords, new_x, new_y):
 	min_d = min([(new_x - coords[i][0])**2 + (new_y - coords[i][1])**2 if i!=chosen else MAXIMUM for i in range(50)])
 	min_d = min_d**0.5
 	return min_d
+
+def min_dis(coords):
+    return min([min([np.linalg.norm(coords[i] - coords[j]) for i in range(j+1,50)]) for j in range(50-1)])

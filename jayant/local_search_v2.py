@@ -5,7 +5,7 @@ from datetime import datetime
 import random
 from args import make_args
 from tqdm import tqdm
-from utils import score, initialise_valid, initialise_periphery, min_dist_from_rest, delta_score
+from utils import score, initialise_valid, initialise_periphery, min_dist_from_rest, delta_score, initialise_max
 from constants import *
 
 args = make_args()
@@ -14,9 +14,10 @@ EPSILON = args.step
 RANDOM_RESTART_THRESH = 100
 RANDOM_EPS = args.random_eps
 DIRECTIONS = args.directions
+MIN_IMPROVEMENT_TO_STEP = 0
 
 if RANDOM_EPS:
-	RANDOM_RESTART_THRESH = 500*RANDOM_RESTART_THRESH
+	RANDOM_RESTART_THRESH = 5000*RANDOM_RESTART_THRESH
 	LOWER_LIM = 0.1
 	upper_lims = [3, 20, 200, 600, 5000]
 	lim_sizes = ["teeny tiny", "super small", "small", "medium", "large"]
@@ -70,7 +71,8 @@ if __name__ == "__main__":
 	# sys.exit()
 
 	# coords = initialise_periphery()
-	coords = initialise_valid()
+	# coords = initialise_valid()
+	coords = initialise_max()
 
 	DELTA = (2*np.pi)/DIRECTIONS
 
@@ -104,7 +106,7 @@ if __name__ == "__main__":
 
 		#considering just
 		best_coords = None
-		best_improvement = 0
+		best_improvement = MIN_IMPROVEMENT_TO_STEP
 		best_windmill = None
 		old_score, original_deficit = score(coords,wind_inst_freq, True, True) 
 		print("current average : {}".format(old_score))
@@ -148,7 +150,7 @@ if __name__ == "__main__":
 			# score(chosen, )
 			coords = best_coords
 
-		if iteration%5000 == 0:
+		if iteration%50000 == 0:
 			print("saving")
 			save_csv(coords)
 
