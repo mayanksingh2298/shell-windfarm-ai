@@ -55,8 +55,9 @@ class LineBuilder:
 			f = open("submissions/manual_partial_{}.csv".format(self.save_time), "w")
 			np.savetxt(f, coords, delimiter=',', header='x,y', comments='', fmt='%1.8f')
 			f.close()
-			full_path = os.path.abspath("submissions/manual_partial_{}.csv".format(self.save_time))
-			os.system("cd ../../evaluator/; python3 Farm_Evaluator_Vec.py " + full_path)
+			if (len(sys.argv) != 2):
+				full_path = os.path.abspath("submissions/manual_partial_{}.csv".format(self.save_time))
+				os.system("cd ../../evaluator/; python3 Farm_Evaluator_Vec.py " + full_path)
 
 		if self.counter == 50:
 			s = score(coords, wind_inst_freq, True)

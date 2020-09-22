@@ -14,8 +14,8 @@ EPSILON = args.step
 RANDOM_RESTART_THRESH = 100* 500
 RANDOM_EPS = True
 DIRECTIONS = args.directions
-RANDOM_NEG = True
-weighting = None
+RANDOM_NEG = False
+weighting = "speed"
 
 def to_radian(x):
 	return (x * np.pi)/180.0
@@ -37,6 +37,7 @@ if __name__ == "__main__":
 			prob_dist = prob_dist.sum(axis = 1)
 		else:
 			prob_dist = np.matmul(prob_dist, np.arange(2,32,2))
+			prob_dist = prob_dist/prob_dist.sum()
 
 	iteration = 0
 
@@ -112,7 +113,7 @@ if __name__ == "__main__":
 					best_coords = copied
 					best_windmill = chosen
 			
-
+		print ("Random weight is {} and neg is {}".format(weighting, RANDOM_NEG))
 		if best_coords is None:
 			print("no improvement in any direction; happened {} consecutive times before this".format( iters_with_no_inc))
 			iters_with_no_inc += 1
