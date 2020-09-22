@@ -3,6 +3,7 @@ from evaluate import checkConstraints, binWindResourceData, getAEP, loadPowerCur
 import numpy as np
 from constants import *
 import random
+import pandas as pd
 
 def initialise_valid():
 	#for now return the same everytime to compare methods etc
@@ -58,6 +59,8 @@ def initialise_periphery():
 	# random.shuffle(data)
 	return np.array(data[:50])
 
+def initialise_file(filename):
+	return pd.read_csv(filename).to_numpy()
 
 def score(coords, wind_inst_freq, to_print = False, with_deficit = False):
 	success = checkConstraints(coords, turb_diam)
