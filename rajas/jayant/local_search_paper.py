@@ -25,7 +25,7 @@ def save_csv(coords):
     np.savetxt(f, coords, delimiter=',', header='x,y', comments='', fmt='%1.8f')
     f.close()
 
-def checkPossible(vi, v):
+def checkPossible(vi, v, chosen):
     new_x = vi[0] + v[0]
     new_y = vi[1] + v[1]
     if not (50 < new_x < 3950 and 50 < new_y < 3950):
@@ -51,7 +51,7 @@ if __name__ == "__main__":
     old_score, original_deficit = score(coords,wind_inst_freq, True, True)
     std_dis = INIT_STD_DIS
     while(True):
-        if iteration%SAVE_FREQ and old_score > 527 == 0:
+        if iteration%SAVE_FREQ == 0 and old_score > 527:
             print("saving")
             save_csv(coords)
         print()
@@ -85,12 +85,14 @@ if __name__ == "__main__":
             v = -v
 
         numtimes = 0
-        while (checkPossible(vi, v) == False):
+        flag = False
+        while (checkPossible(vi, v, chosen) == False):
             if numtimes == NUMTIMESMAX:
+                flag = True
                 break
             v *= REDUCTION
             numtimes +=1
-        else:
+        if flag:
             print ("Was not able to get a good score for {}".format(chosen))
             continue
         vf = vi + v
