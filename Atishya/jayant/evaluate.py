@@ -482,7 +482,7 @@ def checkConstraints(turb_coords, turb_diam):
         for turb2 in np.delete(turb_coords, i, axis=0):
             if  np.linalg.norm(turb1 - turb2) < 4*turb_diam:
                 prox_constr_viol = True
-                # print("Proxim violation:",turb1,turb2)
+                print("Proxim violation:",turb1,turb2)
                 break
     
     #return success flag befor printing

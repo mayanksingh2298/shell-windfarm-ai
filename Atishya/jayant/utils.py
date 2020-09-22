@@ -62,6 +62,9 @@ def initialise_periphery():
 def score(coords, wind_inst_freq, to_print = False, get_each_turbine_power=False):
 	success = checkConstraints(coords, turb_diam)
 	if not success:
+		print("CONSTRAINTS VIOLATED")
+		# exit(0)
+		raise "VIOLATION"
 		return MINIMUM 
 	AEP = getAEP(turb_rad, coords, power_curve, wind_inst_freq, 
 		n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t, get_each_turbine_power=get_each_turbine_power) 
