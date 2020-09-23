@@ -15,6 +15,7 @@ REDUCTION = 0.9
 INC_SIZE = 10
 INIT_STD_DIS = (649 - 400)/3
 SAVE_FREQ = 100000
+PRINT_FREQ = 10000
 
 def to_radian(x):
     return (x * np.pi)/180.0
@@ -49,18 +50,18 @@ if __name__ == "__main__":
         coords = initialise_periphery()
 
     old_score, original_deficit = score(coords,wind_inst_freq, True, True)
-    std_dis = INIT_STD_DIS
+    std_dis = [INIT_STD_DIS for i in range(50)]
     while(True):
         if iteration%SAVE_FREQ == 0 and old_score > 527:
             print("saving")
             save_csv(coords)
-        print()
-        print("Total iter num: {}".format(iteration))
-
+        should_print = iteration % PRINT_FREQ == 0
+        if should_print:
+            print()
+            print("Total iter num: {}".format(iteration))
+            print("current average : {}".format(old_score))
         iteration += 1
         chosen = np.random.randint(0,50)
-
-        print("current average : {}".format(old_score))
 
         x, y = coords[chosen]
         vi = np.array([x,y])
@@ -77,7 +78,7 @@ if __name__ == "__main__":
 
         theta_v = np.arccos(v[0])
         theta = np.random.normal(theta_v, np.pi/6)
-        d = np.random.normal(0, std_dis)
+        d = abs(np.random.normal(0, std_dis[chosen]))
 
         v = d * np.array([math.cos(theta), math.sin(theta)])
 
@@ -93,7 +94,8 @@ if __name__ == "__main__":
             v *= REDUCTION
             numtimes +=1
         if flag:
-            print ("Was not able to get a good score for {}".format(chosen))
+            if should_print:
+                print ("Was not able to get a good score for {}".format(chosen))
             continue
         vf = vi + v
         new_x, new_y = vf[0], vf[1]
@@ -105,9 +107,11 @@ if __name__ == "__main__":
             improvement = new_score - old_score
             old_score = new_score
             original_deficit = new_deficit
-            print("Chose windmill {} and got an improvement of {} units in the average AEP".format(chosen, improvement))
-            std_dis += INC_SIZE
+            if should_print:
+                print("Chose windmill {} and got an improvement of {} units in the average AEP".format(chosen, improvement))
+            std_dis[chosen] += INC_SIZE
         else:
-            print("Chose windmill {} and did not get an improvement".format(chosen))
-            if std_dis - INC_SIZE > INIT_STD_DIS: 
-                std_dis -= INC_SIZE
+            if should_print:
+                print("Chose windmill {} and did not get an improvement".format(chosen))
+            if std_dis[chosen] - INC_SIZE > INIT_STD_DIS: 
+                std_dis[chosen] -= INC_SIZE
