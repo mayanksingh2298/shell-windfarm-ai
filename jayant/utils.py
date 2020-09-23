@@ -127,12 +127,16 @@ def ignore_speed(arr):
 def delta_check_constraints(coords, chosen, new_x, new_y):
     if not (50 < new_x < 3950 and 50 < new_y < 3950):
     	# print(new_)
-        return False
+    	print("perimeter violation")
+    	# breakpoint()
+    	return False
 
     pt = np.array([new_x, new_y])
     for i in range(coords.shape[0]):
     	if i != chosen:
-    		if np.linalg.norm(coords - pt) <= 400 + PRECISION:
+    		if np.linalg.norm(coords[i] - pt) <= 400:
+    			print("too near")
+    			# breakpoint()
     			return False
     return True
 
@@ -195,12 +199,14 @@ def fetch_movable_segments(coords, chosen, direction):
 
 			if both_coords_arent_wrong(x_l, y_l, x_r, y_r):
 				constraints.append(((x_l, y_l),(x_r, y_r))) #increasing val of x ke basis pe
+			# else:
+			# 	print("ignored {}, {} to {}, {}".format(x_l, y_l, x_r, y_r))
 			# constraints.append()
  
 			#check proj distance first
-			
-	# print(left,right)
 	constraints.sort()
+	# print()
+	# print(left,right)
 	# print(constraints)
 	#merge constraints
 	if len(constraints) == 0:
@@ -211,7 +217,7 @@ def fetch_movable_segments(coords, chosen, direction):
 	#start
 	# cleaned_constraints = []
 
-	merged = [constraints[0]]
+	# merged = [constraints[0]]
 
 	# for i in range(1, len(constraints)):
 	# 	(x_prev, _) = constraints[i][1]
@@ -246,7 +252,9 @@ def fetch_movable_segments(coords, chosen, direction):
 			last = constraints[i]
 
 
-	if constraints[-1][1][0] < right[0]:
-		ans.append((constraints[-1][1], right))
+
+	rightmost = np.argmax([constraints[i][1][0] for i in range(len(constraints))])
+	if constraints[rightmost][1][0] < right[0]:
+		ans.append((constraints[rightmost][1], right))
 
 	return ans

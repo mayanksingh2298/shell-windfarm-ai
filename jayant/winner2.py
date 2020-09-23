@@ -94,14 +94,14 @@ if __name__ == "__main__":
 		
 
 		for ind, ((a0, a1), (b0,b1)) in enumerate(segments):
-			# if not delta_check_constraints(coords, chosen, new_x, new_y):
-			# 	print("ERROR")
-			# 	sys.exit()
-			# 	continue
-			# new_x = (a0 + b0)/2
-			# new_y = (a1 + b1)/2
-			new_x= np.random.uniform(min(a0,b0), max(a0, b0))
-			new_y= np.random.uniform(min(a1,b1), max(a1, b1))
+			if not delta_check_constraints(coords, chosen, new_x, new_y):
+				print("ERROR")
+				sys.exit()
+				# continue
+			new_x = (a0 + b0)/2
+			new_y = (a1 + b1)/2
+			# new_x= np.random.uniform(min(a0,b0), max(a0, b0))
+			# new_y= np.random.uniform(min(a1,b1), max(a1, b1))
 			# new_score = score(copied, wind_inst_freq)
 			new_score, new_deficit = delta_score(coords, wind_inst_freq, chosen, new_x, new_y, original_deficit)
 			# improvement = new_score - old_score

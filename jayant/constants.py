@@ -5,7 +5,7 @@ import numpy as np
 
 MAXIMUM = 10**10
 MINIMUM = -10**10
-PRECISION = 10**(-3)
+PRECISION = 10e-10
 
 turb_specs    =  {   
                      'Name': 'Anon Name',
