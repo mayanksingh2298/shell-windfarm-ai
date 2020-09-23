@@ -1,5 +1,5 @@
 # utils.py
-from evaluate import checkConstraints, binWindResourceData, getAEP, loadPowerCurve, getTurbLoc, preProcessing, delta_AEP
+from evaluate import checkConstraints, binWindResourceData, getAEP, loadPowerCurve, getTurbLoc, preProcessing, delta_AEP, delta_deficit
 import numpy as np
 from constants import *
 import random
@@ -33,6 +33,10 @@ def initialise_valid():
 
 	random.shuffle(data)
 	return np.array(data[:50])
+
+#from rajas
+def initialise_file(filename):
+	return pd.read_csv(filename).to_numpy()
 
 def initialise_periphery():
 	data = []
@@ -103,6 +107,11 @@ def delta_score(coords, wind_inst_freq, chosen, new_x, new_y, original_deficit):
 	            n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t,
 	            chosen, new_x, new_y, original_deficit)
 
+def delta_loss(coords, wind_inst_freq, chosen, new_x, new_y, original_deficit):
+	return delta_deficit(turb_rad, coords, power_curve, wind_inst_freq, 
+	            n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t,
+	            chosen, new_x, new_y, original_deficit)
+
 def min_dist_from_rest(chosen, coords, new_x, new_y):
 	min_d = min([(new_x - coords[i][0])**2 + (new_y - coords[i][1])**2 if i!=chosen else MAXIMUM for i in range(50)])
 	min_d = min_d**0.5
@@ -110,3 +119,6 @@ def min_dist_from_rest(chosen, coords, new_x, new_y):
 
 def min_dis(coords):
     return min([min([np.linalg.norm(coords[i] - coords[j]) for i in range(j+1,50)]) for j in range(50-1)])
+
+def ignore_speed(arr):
+	return arr[[i*n_slices_sped for i in range(n_slices_drct)]]

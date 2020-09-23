@@ -1,4 +1,6 @@
-#andha crude local search
+#smartly choosing where to jump to
+
+
 import numpy as np
 from evaluate import checkConstraints, binWindResourceData, getAEP, loadPowerCurve, getTurbLoc, preProcessing
 from datetime import datetime

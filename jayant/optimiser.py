@@ -99,8 +99,7 @@ def constraint(x):
 print('Initial Objective: ' + str(objective(x0)))
 
 solution = minimize(objective,x0,method='SLSQP',\
-                    bounds=b,constraints={ 'type' : 'ineq', 'fun':constraint
-                    })
+                    bounds=b,constraints=[{ 'type' : 'ineq', 'fun':constraint }])
 x = solution.x
 print(solution.fun)
 # print()

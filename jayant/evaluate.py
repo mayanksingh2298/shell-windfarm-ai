@@ -304,7 +304,7 @@ def preProcessing(power_curve):
     # For coordinate transformation 
     cos_dir = np.cos(wind_drcts).reshape(n_wind_instances,1)
     sin_dir = np.sin(wind_drcts).reshape(n_wind_instances,1)
-    
+    # cos_dir1 = np.cos()
     # create copies of n_wind_instances wind speeds from wind_instances
     wind_sped_stacked = np.column_stack([wind_instances[:,0]]*n_turbs)
    
@@ -329,13 +329,14 @@ def contribution(turb_rad, turb_coords, power_curve, wind_inst_freq,
     n_turbs        =   turb_coords.shape[0]
     assert n_turbs ==  50, "Error! Number of turbines is not 50."
     
-    rotate_coords   =  np.zeros((n_wind_instances, n_turbs, 2), dtype=np.float64)
+    rotate_coords   =  np.zeros((cos_dir.shape[0], n_turbs, 2), dtype=np.float64)
     # Coordinate Transformation. Rotate coordinates to downwind, crosswind coordinates
-
+    first_dimension = cos_dir.shape[0]
     #basically x_new = xcostheta - ysintheta
     #and y_new = xsintheta + ycostheta
     
     # big oh 540 x 50 
+    # print(cos_dir.shape, sin_dir.shape. turb_coords.shape)
     rotate_coords[:,:,0] =  np.matmul(cos_dir, np.transpose(turb_coords[:,0].reshape(n_turbs,1))) - \
                            np.matmul(sin_dir, np.transpose(turb_coords[:,1].reshape(n_turbs,1)))
     rotate_coords[:,:,1] =  np.matmul(sin_dir, np.transpose(turb_coords[:,0].reshape(n_turbs,1))) +\
@@ -347,8 +348,8 @@ def contribution(turb_rad, turb_coords, power_curve, wind_inst_freq,
     # x_dist = np.zeros((n_wind_instances,n_turbs,n_turbs), dtype=np.float64)
     
     #chosen ka baakiyon se
-    x_dist = np.zeros((n_wind_instances,n_turbs), dtype=np.float64)
-    for i in range(n_wind_instances):
+    x_dist = np.zeros((first_dimension,n_turbs), dtype=np.float64)
+    for i in range(first_dimension):
         #tmp was the the x coord of each turbine
         # tmp = rotate_coords[i,:,0].repeat(n_turbs).reshape(n_turbs, n_turbs)
         
@@ -364,8 +365,8 @@ def contribution(turb_rad, turb_coords, power_curve, wind_inst_freq,
 
     # y_dist - y dist between turbine pairs wrt downwind/crosswind coordinates)
     # for each wind instance    
-    y_dist = np.zeros((n_wind_instances,n_turbs), dtype=np.float64)
-    for i in range(n_wind_instances):
+    y_dist = np.zeros((first_dimension,n_turbs), dtype=np.float64)
+    for i in range(first_dimension):
         # tmp = rotate_coords[i,:,1].repeat(n_turbs).reshape(n_turbs, n_turbs)
         # y_dist[i] = tmp - tmp.transpose()
         tmp1 = rotate_coords[i,:,1]
@@ -402,6 +403,39 @@ def contribution(turb_rad, turb_coords, power_curve, wind_inst_freq,
     ans = np.square(mine_on_others)
     ans[:,my_i] = on_me
     return ans
+
+
+
+def delta_deficit(turb_rad, turb_coords, power_curve, wind_inst_freq, 
+            n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t,
+            my_i, new_x, new_y, original_deficit):
+    # print(cos_dir.shape, sin_dir.shape)
+    old_contri = contribution(turb_rad, turb_coords, power_curve, wind_inst_freq, 
+            n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t,
+            my_i)
+
+    # correct_contri = debug_contribution(turb_rad, turb_coords, power_curve, wind_inst_freq, 
+    #         n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t, my_i)
+
+    # breakpoint()
+    new_coords = turb_coords.copy()
+
+    new_coords[my_i][0], new_coords[my_i][1] = new_x, new_y
+
+    new_contri = contribution(turb_rad, new_coords, power_curve, wind_inst_freq, 
+            n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t,
+            my_i)
+    
+    # new_correct_contri = debug_contribution(turb_rad, new_coords, power_curve, wind_inst_freq, 
+    #         n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t, my_i)
+
+    # Element wise multiply the above with (1- sped_deficit_eff) to get
+    # effective windspeed due to the happening wake
+
+    #STupid machione epsilon error here - wasted 5 hrs, -1e-19 types
+    sped_deficit_eff = np.sqrt(np.abs(np.square(original_deficit) + new_contri - old_contri))
+    
+    return np.sum(np.matmul(wind_inst_freq, sped_deficit_eff)), sped_deficit_eff
 
 def delta_AEP(turb_rad, turb_coords, power_curve, wind_inst_freq, 
             n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t,
