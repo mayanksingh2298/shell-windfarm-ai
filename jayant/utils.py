@@ -122,3 +122,131 @@ def min_dis(coords):
 
 def ignore_speed(arr):
 	return arr[[i*n_slices_sped for i in range(n_slices_drct)]]
+
+
+def delta_check_constraints(coords, chosen, new_x, new_y):
+    if not (50 < new_x < 3950 and 50 < new_y < 3950):
+    	# print(new_)
+        return False
+
+    pt = np.array([new_x, new_y])
+    for i in range(coords.shape[0]):
+    	if i != chosen:
+    		if np.linalg.norm(coords - pt) <= 400 + PRECISION:
+    			return False
+    return True
+
+
+# def get_from_x(x,y,theta,known):
+	# return (known, )
+
+def in_perimeter(x,y):
+	return 50<x<3950 and 50<y<3950
+
+def both_coords_arent_wrong(x_l, y_l, x_r, y_r):
+	# if max(x_l, x_r) <= 50 or min(x_l, x_r) >= 3950 or max(y_l,y_r) <= 50 or min(y_l, y_r) >= 3950:
+		#useless constraint
+		# return False
+
+	return in_perimeter(x_l, y_l) or in_perimeter(x_r, y_r)
+
+
+def fetch_movable_segments(coords, chosen, direction):
+
+	x, y = coords[chosen]
+	theta = direction
+	if np.cos(theta) == 0 or np.sin(theta) == 1:
+		theta += 1e-10 #its improbable that we get the exact angle zero
+
+	pts = []
+	eps = 1e-10
+	low_lim = 50+eps
+	upper_lim = 3950 - eps
+	pts.append((low_lim, y + np.tan(theta)*(low_lim - x) ))
+	pts.append((upper_lim, y + np.tan(theta)*(upper_lim - x) ))
+	pts.append((x + (1/np.tan(theta))*(low_lim - y), low_lim))
+	pts.append((x + (1/np.tan(theta))*(upper_lim - y), upper_lim))
+	pts.sort()
+	left, right = pts[1], pts[2]
+	#using the pt and dir, get boundaries
+	# can this be a numpy operation
+	# where we directly calc projections
+	dir_vec = np.array([np.cos(theta), np.sin(theta)])
+	constraints = []
+	for i in range(coords.shape[0]):
+		if i != chosen:
+			x1, y1 = coords[i]
+			vec = np.array([x - x1, y - y1])
+			jump = -np.matmul(dir_vec, vec)
+
+			proj = coords[chosen] + jump*dir_vec
+			dis = np.linalg.norm(coords[i] - proj)
+			# print(dis, jump)
+			if dis >= 400 + eps:
+				#safe
+				continue
+			#problem
+			delta = (((400+eps)**2 - dis**2))**0.5 + 2*eps
+
+			x_l, y_l = proj - delta*dir_vec
+			x_r, y_r = proj + delta*dir_vec
+			if x_l > x_r:
+				x_l, y_l, x_r, y_r = x_r, y_r, x_l, y_l
+
+			if both_coords_arent_wrong(x_l, y_l, x_r, y_r):
+				constraints.append(((x_l, y_l),(x_r, y_r))) #increasing val of x ke basis pe
+			# constraints.append()
+ 
+			#check proj distance first
+			
+	# print(left,right)
+	constraints.sort()
+	# print(constraints)
+	#merge constraints
+	if len(constraints) == 0:
+		# print()
+		return [(left, right)]
+
+	# merged = [constraints[0]]
+	#start
+	# cleaned_constraints = []
+
+	merged = [constraints[0]]
+
+	# for i in range(1, len(constraints)):
+	# 	(x_prev, _) = constraints[i][1]
+	# 	(x_next, _) = constraints[i+1][0]
+
+
+	ans = []
+	if constraints[0][0][0] > left[0]:
+		ans.append((left, constraints[0][0]))
+
+	last = constraints[0]
+
+	for i in range(1,len(constraints)):
+		# (x_prev, _) = constraints[i][1]
+		(x_prev, _) = last[1]
+		(x_next, _) = constraints[i][0]
+
+		# if x_prev <= 50:
+			# continue
+
+		# if x_
+
+
+		if x_prev >= x_next:
+			# pass #no space in bw
+			x_next_next, _ = constraints[i][1]
+			if x_next_next > x_prev:
+				last = (last[0], constraints[i][1])
+		else:
+			# print(x_prev, x_next, constraints[i], constraints[i+1])
+			ans.append((last[1], constraints[i][0]))
+			last = constraints[i]
+
+
+	if constraints[-1][1][0] < right[0]:
+		ans.append((constraints[-1][1], right))
+
+	return ans
