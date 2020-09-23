@@ -323,7 +323,7 @@ def preProcessing(power_curve):
     return(n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t)
 
 def contribution(turb_rad, turb_coords, power_curve, wind_inst_freq, 
-            n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t,
+            n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t_direct,
             my_i):
     
     n_turbs        =   turb_coords.shape[0]
@@ -348,35 +348,38 @@ def contribution(turb_rad, turb_coords, power_curve, wind_inst_freq,
     # x_dist = np.zeros((n_wind_instances,n_turbs,n_turbs), dtype=np.float64)
     
     #chosen ka baakiyon se
-    x_dist = np.zeros((first_dimension,n_turbs), dtype=np.float64)
-    for i in range(first_dimension):
-        #tmp was the the x coord of each turbine
-        # tmp = rotate_coords[i,:,0].repeat(n_turbs).reshape(n_turbs, n_turbs)
+    # x_dist = np.zeros((first_dimension,n_turbs), dtype=np.float64)
+    # for i in range(first_dimension):
+    #     #tmp was the the x coord of each turbine
+    #     # tmp = rotate_coords[i,:,0].repeat(n_turbs).reshape(n_turbs, n_turbs)
         
-        #now we just want it againt one person
-        # tmp1 = 
-        tmp1 = rotate_coords[i,:,0]
-        tmp2 = rotate_coords[i,my_i,0].repeat(n_turbs)
+    #     #now we just want it againt one person
+    #     # tmp1 = 
+    #     tmp1 = rotate_coords[i,:,0]
+    #     tmp2 = rotate_coords[i,my_i,0].repeat(n_turbs)
 
 
-        # x_dist[i] = tmp - tmp.transpose()
-        x_dist[i] = tmp1 - tmp2
+    #     # x_dist[i] = tmp - tmp.transpose()
+    #     x_dist[i] = tmp1 - tmp2
     
 
-    # y_dist - y dist between turbine pairs wrt downwind/crosswind coordinates)
-    # for each wind instance    
-    y_dist = np.zeros((first_dimension,n_turbs), dtype=np.float64)
-    for i in range(first_dimension):
-        # tmp = rotate_coords[i,:,1].repeat(n_turbs).reshape(n_turbs, n_turbs)
-        # y_dist[i] = tmp - tmp.transpose()
-        tmp1 = rotate_coords[i,:,1]
-        tmp2 = rotate_coords[i,my_i,1].repeat(n_turbs)
+    # # y_dist - y dist between turbine pairs wrt downwind/crosswind coordinates)
+    # # for each wind instance    
+    # y_dist = np.zeros((first_dimension,n_turbs), dtype=np.float64)
+    # for i in range(first_dimension):
+    #     # tmp = rotate_coords[i,:,1].repeat(n_turbs).reshape(n_turbs, n_turbs)
+    #     # y_dist[i] = tmp - tmp.transpose()
+    #     tmp1 = rotate_coords[i,:,1]
+    #     tmp2 = rotate_coords[i,my_i,1].repeat(n_turbs)
 
-        # x_dist[i] = tmp - tmp.transpose()
-        y_dist[i] = tmp1 - tmp2
-    
+    #     # x_dist[i] = tmp - tmp.transpose()
+    #     y_dist[i] = tmp1 - tmp2
+    x_dist = rotate_coords[:,:,0] - rotate_coords[:,my_i,0].repeat(turb_coords.shape[0]).reshape(rotate_coords.shape[0], -1)
+    y_dist = rotate_coords[:,:,1] - rotate_coords[:,my_i,1].repeat(turb_coords.shape[0]).reshape(rotate_coords.shape[0], -1)  
     y_dist = np.abs(y_dist) 
      
+    x_dist = np.repeat(x_dist, n_wind_instances//first_dimension, axis = 0)
+    y_dist = np.repeat(y_dist, n_wind_instances//first_dimension, axis = 0)
 
     # Now use element wise operations to calculate speed deficit.
     # kw, wake decay constant presetted to 0.05
@@ -387,7 +390,7 @@ def contribution(turb_rad, turb_coords, power_curve, wind_inst_freq,
     # That occurs for negative x_dist. Those we anyway mark as zeros. 
     
     # sped_deficit = (1-np.sqrt(1-C_t))*((turb_rad/(turb_rad + 0.05*x_dist))**2) 
-    sped_deficit = (1-np.sqrt(1-C_t[:,:,0]))*((turb_rad/(turb_rad + 0.05*np.abs(x_dist)))**2)
+    sped_deficit = (C_t_direct)*((turb_rad/(turb_rad + 0.05*np.abs(x_dist)))**2)
     mine_on_others = sped_deficit.copy()
     others_on_me = sped_deficit.copy()
 

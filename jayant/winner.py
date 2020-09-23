@@ -6,6 +6,7 @@ import random
 from args import make_args
 from tqdm import tqdm
 from utils import score, initialise_valid, initialise_periphery, min_dist_from_rest, delta_score, delta_check_constraints, fetch_movable_segments
+from utils import min_dis
 from constants import *
 
 args = make_args()
@@ -75,8 +76,8 @@ if __name__ == "__main__":
 		# 	else:		
 		# 		v = v / np.linalg.norm(v)
 		# 		theta_v = np.arccos(v[0])
+		# 		direction = np.random.normal(theta_v, 0.1)
 		# 		# direction = np.random.normal(theta_v, np.pi/6)
-		# 		direction = np.random.normal(theta_v, np.pi/6)
 
 
 
@@ -87,18 +88,18 @@ if __name__ == "__main__":
 		#uniform samples from each seg
 		possibilities += [(np.random.uniform(min(a[0],b[0]), max(a[0], b[0])), np.random.uniform(min(a[1],b[1]), max(a[1], b[1]))) for a,b in segments]
 		#centres
-		possibilities += [((a[0]+ b[0])/2, (a[1] + b[1])/2) for a,b in segments]
-		# #lefts
+		# possibilities += [((a[0]+ b[0])/2, (a[1] + b[1])/2) for a,b in segments]
+		# # #lefts
 		# possibilities += [((0.9999*a[0]+ 0.0001*b[0]), (0.9999*a[1] + 0.0001*b[1])) for a,b in segments]
-		# #rights
+		# # #rights
 		# possibilities += [((0.0001*a[0]+ 0.9999*b[0]), (0.0001*a[1] + 0.9999*b[1])) for a,b in segments]
 		
 
 		for ind, (new_x, new_y) in enumerate(possibilities):
-			# if not delta_check_constraints(coords, chosen, new_x, new_y):
-			# 	print("ERROR")
-			# 	sys.exit()
-			# 	continue
+			if not delta_check_constraints(coords, chosen, new_x, new_y):
+				print("ERROR")
+				sys.exit()
+				continue
 
 			# new_score = score(copied, wind_inst_freq)
 			new_score, new_deficit = delta_score(coords, wind_inst_freq, chosen, new_x, new_y, original_deficit)

@@ -104,7 +104,7 @@ def score(coords, wind_inst_freq, to_print = False, with_deficit = False):
 
 def delta_score(coords, wind_inst_freq, chosen, new_x, new_y, original_deficit):
 	return delta_AEP(turb_rad, coords, power_curve, wind_inst_freq, 
-	            n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t,
+	            n_wind_instances, cos_dir1, sin_dir1, wind_sped_stacked, C_t_direct,
 	            chosen, new_x, new_y, original_deficit)
 
 def delta_loss(coords, wind_inst_freq, chosen, new_x, new_y, original_deficit):

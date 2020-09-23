@@ -43,3 +43,4 @@ n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t = preProcessing(power
 cos_dir1 = cos_dir[[i*n_slices_sped for i in range(n_slices_drct)]]
 sin_dir1 = sin_dir[[i*n_slices_sped for i in range(n_slices_drct)]]
 C_t1 = C_t[[i*n_slices_sped for i in range(n_slices_drct)], :, :]
+C_t_direct = 1-np.sqrt(1-C_t[:,:,0])
