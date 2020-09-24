@@ -52,7 +52,8 @@ if __name__ == "__main__":
 
 	iteration = -1
 
-
+	hits = [0 for i in range(n_slices_drct)]
+	misses = [0 for i in range(n_slices_drct)]
 	# print("random model")
 	# last = 500
 	# for _ in tqdm(range(10000000000)):
@@ -94,6 +95,9 @@ if __name__ == "__main__":
 			EPSILON = np.random.uniform(LOWER_LIM, upper_lims[lim_id])
 			print("considering a {} step - {}".format(lim_sizes[lim_id], EPSILON))
 		
+		if iteration%10 == 0 and iteration!= 0:
+			print([(hits[i], misses[i]) for i in range(n_slices_drct)])
+
 		total_iterations += 1
 		iteration += 1
 		chosen = np.random.randint(0,50) #50 is not included
@@ -117,13 +121,16 @@ if __name__ == "__main__":
 
 			#check coords yahi pe
 			if not (50 < new_x < 3950 and 50 < new_y < 3950):
+				misses[option] += 1
 				continue
 				#just need to check the latest point
 			#also check dist from nbrs of this new pt
 			min_d = min_dist_from_rest(chosen, coords, new_x, new_y)
 			if min_d <= 400 + PRECISION:
+				misses[option] += 1
 				continue
 
+			hits[option] += 1
 			copied = coords.copy() # an undo can be done to optimise later
 			copied[chosen][0], copied[chosen][1] = new_x, new_y 
 			# new_score = score(copied, wind_inst_freq)

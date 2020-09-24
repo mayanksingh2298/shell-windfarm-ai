@@ -15,7 +15,6 @@ REDUCTION = 0.9
 INC_SIZE = 10
 INIT_STD_DIS = (649 - 400)/3
 SAVE_FREQ = 100000
-PRINT_FREQ = 10000
 
 def to_radian(x):
     return (x * np.pi)/180.0
@@ -40,7 +39,7 @@ def checkPossible(vi, v, chosen):
 if __name__ == "__main__":
 
     years = [2007, 2008, 2009, 2013, 2014, 2015, 2017]
-    year_wise_dist = np.array([binWindResourceData('../../data/WindData/wind_data_{}.csv'.format(year)) for year in years])
+    year_wise_dist = np.array([binWindResourceData('../data/WindData/wind_data_{}.csv'.format(year)) for year in years])
     wind_inst_freq = np.mean(year_wise_dist, axis = 0) #over all years
 
     iteration = 0
@@ -50,18 +49,19 @@ if __name__ == "__main__":
         coords = initialise_periphery()
 
     old_score, original_deficit = score(coords,wind_inst_freq, True, True)
-    std_dis = [INIT_STD_DIS for i in range(50)]
+    std_dis = INIT_STD_DIS
     while(True):
         if iteration%SAVE_FREQ == 0 and old_score > 527:
             print("saving")
             save_csv(coords)
-        should_print = iteration % PRINT_FREQ == 0
-        if should_print:
-            print()
-            print("Total iter num: {}".format(iteration))
-            print("current average : {}".format(old_score))
+
         iteration += 1
         chosen = np.random.randint(0,50)
+
+        if iteration%10000 == 0:
+            print()
+            print("Total iter num: {}".format(iteration))
+
 
         x, y = coords[chosen]
         vi = np.array([x,y])
@@ -78,7 +78,7 @@ if __name__ == "__main__":
 
         theta_v = np.arccos(v[0])
         theta = np.random.normal(theta_v, np.pi/6)
-        d = abs(np.random.normal(0, std_dis[chosen]))
+        d = np.random.normal(0, std_dis)
 
         v = d * np.array([math.cos(theta), math.sin(theta)])
 
@@ -94,24 +94,24 @@ if __name__ == "__main__":
             v *= REDUCTION
             numtimes +=1
         if flag:
-            if should_print:
-                print ("Was not able to get a good score for {}".format(chosen))
+            # print ("Was not able to get a good score for {}".format(chosen))
             continue
         vf = vi + v
         new_x, new_y = vf[0], vf[1]
 
         new_score, new_deficit = delta_score(coords, wind_inst_freq, chosen, new_x, new_y, original_deficit)
 
-        if new_score >= old_score:
+        if new_score >= old_score + 1e-7:
             coords[chosen][0], coords[chosen][1] = new_x, new_y
             improvement = new_score - old_score
             old_score = new_score
             original_deficit = new_deficit
-            if should_print:
-                print("Chose windmill {} and got an improvement of {} units in the average AEP".format(chosen, improvement))
-            std_dis[chosen] += INC_SIZE
+            print()
+            print("Total iter num: {}".format(iteration))
+            print("current average : {}".format(old_score))
+            print("Chose windmill {} and got an improvement of {} units in the average AEP".format(chosen, improvement))
+            std_dis += INC_SIZE
         else:
-            if should_print:
-                print("Chose windmill {} and did not get an improvement".format(chosen))
-            if std_dis[chosen] - INC_SIZE > INIT_STD_DIS: 
-                std_dis[chosen] -= INC_SIZE
+            # print("Chose windmill {} and did not get an improvement".format(chosen))
+            if std_dis - INC_SIZE > INIT_STD_DIS: 
+                std_dis -= INC_SIZE

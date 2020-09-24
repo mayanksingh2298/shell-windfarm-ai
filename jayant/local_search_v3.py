@@ -1,11 +1,11 @@
-#best first 
+#andha crude local search
 import numpy as np
 from evaluate import checkConstraints, binWindResourceData, getAEP, loadPowerCurve, getTurbLoc, preProcessing
 from datetime import datetime
 import random
 from args import make_args
 from tqdm import tqdm
-from utils import score, initialise_valid, initialise_periphery, min_dist_from_rest, delta_score, initialise_max
+from utils import score, initialise_valid, initialise_periphery, min_dist_from_rest, delta_loss
 from constants import *
 
 args = make_args()
@@ -14,12 +14,12 @@ EPSILON = args.step
 RANDOM_RESTART_THRESH = 100
 RANDOM_EPS = args.random_eps
 DIRECTIONS = args.directions
-MIN_IMPROVEMENT_TO_STEP = 0
 
 if RANDOM_EPS:
-	RANDOM_RESTART_THRESH = 5000*RANDOM_RESTART_THRESH
+	RANDOM_RESTART_THRESH = 50000*RANDOM_RESTART_THRESH
 	LOWER_LIM = 0.1
 	upper_lims = [3, 20, 200, 600, 5000]
+	
 	lim_sizes = ["teeny tiny", "super small", "small", "medium", "large"]
 
 def save_csv(coords):
@@ -27,6 +27,7 @@ def save_csv(coords):
 		.format(score(coords, wind_inst_freq), EPSILON,DIRECTIONS,iteration, str(datetime.now()).replace(':','')), "w")
 	np.savetxt(f, coords, delimiter=',', header='x,y', comments='', fmt='%1.8f')
 	f.close()
+
 
 
 # def debug(coords):
@@ -49,7 +50,7 @@ if __name__ == "__main__":
 	# coords   =  getTurbLoc('../data/turbine_loc_test.csv') #supposed to be a numpy array of shape 50 x 2
 	#to check initialiser
 
-	iteration = 0
+	iteration = -1
 
 
 	# print("random model")
@@ -71,24 +72,29 @@ if __name__ == "__main__":
 	# sys.exit()
 
 	# coords = initialise_periphery()
-	# coords = initialise_valid()
-	coords = initialise_max()
+	coords = initialise_valid()
 
 	DELTA = (2*np.pi)/DIRECTIONS
 
 	total_iterations = 0
 	num_restarts = 0
 	iters_with_no_inc = 0
+	
+	_, original_deficit = score(coords,wind_inst_freq, True, True) 
+	old_loss = np.sum(original_deficit)
+
 	while(True):
-		print()
-		print("Total iter num: {}, num restarts: {}, local iteration number {}".format(total_iterations, num_restarts, iteration))
-		if iters_with_no_inc >= RANDOM_RESTART_THRESH:
+		# if iters_with_no_inc >= RANDOM_RESTART_THRESH:
+		# 	save_csv(coords)
+		# 	iters_with_no_inc = 0
+		# 	iteration = 0
+		# 	num_restarts += 1
+		# 	coords = initialise_valid()
+		if iteration % 1000 == 0:
+			score(coords,wind_inst_freq, True, True) 
+		if iteration%50000 == 0:
+			print("saving")
 			save_csv(coords)
-			iters_with_no_inc = 0
-			iteration = 0
-			num_restarts += 1
-			coords = initialise_valid()
-			continue
 
 		if RANDOM_EPS:
 			sample = np.random.uniform(0,1)
@@ -96,63 +102,60 @@ if __name__ == "__main__":
 			# if  < 0.7:
 			EPSILON = np.random.uniform(LOWER_LIM, upper_lims[lim_id])
 			print("considering a {} step - {}".format(lim_sizes[lim_id], EPSILON))
-
+		
 		total_iterations += 1
 		iteration += 1
 		chosen = np.random.randint(0,50) #50 is not included
 		#now lets see whether we can improve upon our score
 
 		# coords = coords.copy()
+		x, y = coords[chosen]
 
 		#considering just
 		best_coords = None
-		best_improvement = MIN_IMPROVEMENT_TO_STEP
-		best_windmill = None
-		old_score, original_deficit = score(coords,wind_inst_freq, True, True) 
-		print("current average : {}".format(old_score))
-		for chosen in range(50):
-			x, y = coords[chosen]
-			for option in range(DIRECTIONS):
-				angle = option*DELTA
+		best_loss = old_loss
+		print("average loss : {}".format(old_loss))
+		print()
+		for option in range(DIRECTIONS):
+			angle = option*DELTA
 
-				new_x = x + EPSILON*np.cos(angle)
-				new_y = y + EPSILON*np.sin(angle)
+			new_x = x + EPSILON*np.cos(angle)
+			new_y = y + EPSILON*np.sin(angle)
 
 
-				#check coords yahi pe
-				if not (50 < new_x < 3950 and 50 < new_y < 3950):
-					continue
-					#just need to check the latest point
-				#also check dist from nbrs of this new pt
-				min_d = min_dist_from_rest(chosen, coords, new_x, new_y)
-				if min_d <= 400 + PRECISION:
-					continue
+			#check coords yahi pe
+			if not (50 < new_x < 3950 and 50 < new_y < 3950):
+				continue
+				#just need to check the latest point
+			#also check dist from nbrs of this new pt
+			min_d = min_dist_from_rest(chosen, coords, new_x, new_y)
+			if min_d <= 400 + PRECISION:
+				continue
 
-				copied = coords.copy() # an undo can be done to optimise later
-				copied[chosen][0], copied[chosen][1] = new_x, new_y 
-				# new_score = score(copied, wind_inst_freq)
-				new_score, _ = delta_score(coords, wind_inst_freq, chosen, new_x, new_y, original_deficit)
+			copied = coords.copy() # an undo can be done to optimise later
+			copied[chosen][0], copied[chosen][1] = new_x, new_y 
+			# new_score = score(copied, wind_inst_freq)
+			new_loss, new_deficit = delta_loss(coords, wind_inst_freq, chosen, new_x, new_y, original_deficit)
+			# improvement = old_score - new_score
 
-				improvement = new_score - old_score
-
-				if improvement >= best_improvement:
-					best_improvement = improvement
-					best_coords = copied
-					best_windmill = chosen
+			if new_loss <= best_loss:
+				best_loss = new_loss
+				best_coords = copied
+				best_deficit = new_deficit
 			
 
+		print("Total iter num: {}, num restarts: {}, local iteration number {}, step size considered {} ".format(total_iterations, num_restarts, iteration, EPSILON))
 		if best_coords is None:
-			print("no improvement in any direction; happened {} consecutive times before this".format( iters_with_no_inc))
+			print("Chose windmill {} but no improvement in any direction; happened {} consecutive times before this".format(chosen, iters_with_no_inc))
 			iters_with_no_inc += 1
 		else:
-			print("Chose windmill {} and got an improvement of {} units in the average AEP".format(best_windmill, best_improvement))
+			print("Chose windmill {} and got an improvement of {} units in the average Loss".format(chosen, old_loss - best_loss))
 			iters_with_no_inc = 0 #because we are considering such consecutive iters	
 			# score(chosen, )
 			coords = best_coords
+			original_deficit = best_deficit
+			old_loss = best_loss
 
-		if iteration%50000 == 0:
-			print("saving")
-			save_csv(coords)
 
 	print("DONE")		 
 	save_csv(coords)
