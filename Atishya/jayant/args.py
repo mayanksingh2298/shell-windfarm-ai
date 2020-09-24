@@ -7,6 +7,8 @@ def make_args():
 	    help="num directions to consider")
 	parser.add_argument('--random_eps', dest='random_eps', action='store_true',
                         help='step is not fixed')
+	parser.add_argument('--load', type=str, help='load initial turbine positions', default="")
+
 	# parser.set_defaults(random_eps = False)
 	parser.set_defaults(random_eps = True)
 
