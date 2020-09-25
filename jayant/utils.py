@@ -33,11 +33,14 @@ def initialise_valid():
 			data.append((x,y))
 
 	random.shuffle(data)
-	return np.array(data[:50])
+	return np.array(data[:50], dtype = 'float32')
 
 #from rajas
 def initialise_file(filename):
-	return pd.read_csv(filename).to_numpy()
+	# return pd.read_csv(filename).to_numpy()
+	df = pd.read_csv(filename, sep=',', dtype = np.float32)
+	turb_coords = df.to_numpy(dtype = np.float32)
+	return turb_coords
 
 def initialise_periphery():
 	data = []
@@ -61,7 +64,7 @@ def initialise_periphery():
 			data.append((x,y)) 
 
 	# random.shuffle(data)
-	return np.array(data[:50])
+	return np.array(data[:50], dtype = 'float32')
 
 def initialise_max():
 	# import numpy as np
@@ -75,7 +78,7 @@ def initialise_max():
 		_, x, y = [float(i) for i in a.split()]
 		pts.append((x,y))
 
-	pts = np.array(pts)
+	pts = np.array(pts, dtype = 'float32')
 
 	# pts = 2*pts
 	pts = pts*(1/(1-(2-M_EPS)*(0.071377103865)))
@@ -161,10 +164,10 @@ def fetch_movable_segments(coords, chosen, direction):
 	x, y = coords[chosen]
 	theta = direction
 	if np.cos(theta) == 0 or np.sin(theta) == 1:
-		theta += 1e-10 #its improbable that we get the exact angle zero
+		theta += np.float32(1e-10) #its improbable that we get the exact angle zero
 
 	pts = []
-	eps = 1e-6
+	eps = np.float32(1e-6)
 	low_lim = 50+eps
 	upper_lim = 3950 - eps
 	pts.append((low_lim, y + np.tan(theta)*(low_lim - x) ))
@@ -191,7 +194,7 @@ def fetch_movable_segments(coords, chosen, direction):
 				#safe
 				continue
 			#problem
-			delta = (((400+eps)**2 - dis**2))**0.5 + 2*eps
+			delta = (((400+eps)**2 - dis**2))**np.float32(0.5) + 2*eps
 
 			x_l, y_l = proj - delta*dir_vec
 			x_r, y_r = proj + delta*dir_vec

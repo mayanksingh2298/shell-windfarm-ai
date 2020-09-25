@@ -47,7 +47,7 @@ if __name__ == "__main__":
 			score(coords,wind_inst_freq,True)
 			time.sleep(5)
 
-		if iteration%50000 == 0:
+		if iteration%100000 == 0:
 			print("saving")
 			save_csv(coords)
 
