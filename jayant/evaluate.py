@@ -324,7 +324,7 @@ def preProcessing(power_curve):
 
 def contribution(turb_rad, turb_coords, power_curve, wind_inst_freq, 
             n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t_direct,
-            my_i):
+            my_i,smooth_shadows):
     
     n_turbs        =   turb_coords.shape[0]
     assert n_turbs ==  50, "Error! Number of turbines is not 50."
@@ -390,14 +390,21 @@ def contribution(turb_rad, turb_coords, power_curve, wind_inst_freq,
     # That occurs for negative x_dist. Those we anyway mark as zeros. 
     
     # sped_deficit = (1-np.sqrt(1-C_t))*((turb_rad/(turb_rad + 0.05*x_dist))**2) 
-    sped_deficit = (C_t_direct)*((turb_rad/(turb_rad + 0.05*np.abs(x_dist)))**2)
-    mine_on_others = sped_deficit.copy()
-    others_on_me = sped_deficit.copy()
+    if not smooth_shadows:
+        sped_deficit = (C_t_direct)*((turb_rad/(turb_rad + 0.05*np.abs(x_dist)))**2)
+        mine_on_others = sped_deficit.copy()
+        others_on_me = sped_deficit.copy()
 
 
-    mine_on_others[((x_dist <= 0) | ((x_dist > 0) & (y_dist > (turb_rad + 0.05*np.abs(x_dist)))))] = 0.0
-    others_on_me[((x_dist >= 0) | ((x_dist < 0) & (y_dist > (turb_rad + 0.05*np.abs(x_dist)))))] = 0.0
-    
+        mine_on_others[((x_dist <= 0) | ((x_dist > 0) & (y_dist > (turb_rad + 0.05*np.abs(x_dist)))))] = 0.0
+        others_on_me[((x_dist >= 0) | ((x_dist < 0) & (y_dist > (turb_rad + 0.05*np.abs(x_dist)))))] = 0.0
+    else:
+        sped_deficit = (C_t_direct)*((turb_rad/(turb_rad + 0.05*np.abs(x_dist)))**2)*(1/(1 + np.exp(y_dist/(turb_rad + 0.05*np.abs(x_dist)) - 0.75)))
+        mine_on_others = sped_deficit.copy()
+        others_on_me = sped_deficit.copy()
+
+        mine_on_others[((x_dist <= 0))] = 0.0
+        others_on_me[((x_dist >= 0))] = 0.0
     # others_on_me[((x_dist <= 0) | ((x_dist > 0) & (y_dist > (turb_rad + 0.05*np.abs(x_dist)))))] = 0.0
     # mine_on_others[((x_dist >= 0) | ((x_dist < 0) & (y_dist > (turb_rad + 0.05*np.abs(x_dist)))))] = 0.0
     
@@ -442,13 +449,13 @@ def delta_deficit(turb_rad, turb_coords, power_curve, wind_inst_freq,
 
 def delta_AEP(turb_rad, turb_coords, power_curve, wind_inst_freq, 
             n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t,
-            my_i, new_x, new_y, original_deficit):
+            my_i, new_x, new_y, original_deficit, continuous,  smooth_shadows):
     # Calculate Total speed deficit from all upstream turbs, using sqrt of sum of sqrs
     # sped_deficit_eff  = np.sqrt(np.sum(np.square(sped_deficit), axis = 2))
 
     old_contri = contribution(turb_rad, turb_coords, power_curve, wind_inst_freq, 
             n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t,
-            my_i)
+            my_i,smooth_shadows)
 
     # correct_contri = debug_contribution(turb_rad, turb_coords, power_curve, wind_inst_freq, 
     #         n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t, my_i)
@@ -460,7 +467,7 @@ def delta_AEP(turb_rad, turb_coords, power_curve, wind_inst_freq,
 
     new_contri = contribution(turb_rad, new_coords, power_curve, wind_inst_freq, 
             n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t,
-            my_i)
+            my_i, smooth_shadows)
     
     # new_correct_contri = debug_contribution(turb_rad, new_coords, power_curve, wind_inst_freq, 
     #         n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t, my_i)
@@ -479,10 +486,17 @@ def delta_AEP(turb_rad, turb_coords, power_curve, wind_inst_freq,
     wind_sped_eff = wind_sped_stacked*(1.0-sped_deficit_eff)
 
     # Estimate power from power_curve look up for wind_sped_eff
-    indices = searchSorted(power_curve[:,0], wind_sped_eff.ravel())
-    power   = power_curve[indices,2]
-    n_turbs = turb_coords.shape[0]
-    power   = power.reshape(n_wind_instances,n_turbs)
+
+
+    if continuous:
+        # print(wind_sped_eff.shape, wind_sped_eff)
+        power = np.interp(wind_sped_eff, power_curve[:,0],  power_curve[:,2])
+        # print(power.shape, power)
+    else:
+        indices = searchSorted(power_curve[:,0], wind_sped_eff.ravel())
+        power   = power_curve[indices,2]
+        n_turbs = turb_coords.shape[0]
+        power   = power.reshape(n_wind_instances,n_turbs)
     
     # Farm power for single wind instance 
     power   = np.sum(power, axis=1)
@@ -497,7 +511,7 @@ def delta_AEP(turb_rad, turb_coords, power_curve, wind_inst_freq,
     return(AEP, sped_deficit_eff)
     
 def getAEP(turb_rad, turb_coords, power_curve, wind_inst_freq, 
-            n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t, with_deficit = False):
+            n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t, with_deficit = False, continuous = False, smooth_shadows = False):
     
     """
     -**-THIS FUNCTION SHOULD NOT BE MODIFIED-**-
@@ -568,8 +582,13 @@ def getAEP(turb_rad, turb_coords, power_curve, wind_inst_freq,
     # not happening on i because its outside of the wake region of j
     # For some values of x_dist here RuntimeWarning: divide by zero may occur
     # That occurs for negative x_dist. Those we anyway mark as zeros. 
-    sped_deficit = (1-np.sqrt(1-C_t))*((turb_rad/(turb_rad + 0.05*x_dist))**2)  #yaahn pe we can make x_dist abs, cause baad mei neg ki toh hatadenge waise bhi
-    sped_deficit[((x_dist <= 0) | ((x_dist > 0) & (y_dist > (turb_rad + 0.05*x_dist))))] = 0.0
+
+    if not smooth_shadows:
+        sped_deficit = (1-np.sqrt(1-C_t))*((turb_rad/(turb_rad + 0.05*x_dist))**2)  #yaahn pe we can make x_dist abs, cause baad mei neg ki toh hatadenge waise bhi
+        sped_deficit[((x_dist <= 0) | ((x_dist > 0) & (y_dist > (turb_rad + 0.05*x_dist))))] = 0.0
+    else:
+        sped_deficit = (1-np.sqrt(1-C_t))*((turb_rad/(turb_rad + 0.05*x_dist))**2)*(1/(1 + np.exp(y_dist/(turb_rad + 0.05*np.abs(x_dist)) - 0.75))) #yaahn pe we can make x_dist abs, cause baad mei neg ki toh hatadenge waise bhi
+        sped_deficit[((x_dist <= 0))] = 0.0
     # sped_deficit[((x_dist <= 0))] = 0.0
     
     
@@ -584,11 +603,20 @@ def getAEP(turb_rad, turb_coords, power_curve, wind_inst_freq,
 
     
     # Estimate power from power_curve look up for wind_sped_eff
-    indices = searchSorted(power_curve[:,0], wind_sped_eff.ravel())
-    power   = power_curve[indices,2]
-    power   = power.reshape(n_wind_instances,n_turbs)
-    
+
+    if continuous:
+        # print(wind_sped_eff.shape, wind_sped_eff)
+        power = np.interp(wind_sped_eff, power_curve[:,0],  power_curve[:,2])
+        # print(power.shape, power)
+
+    else:
+        indices = searchSorted(power_curve[:,0], wind_sped_eff.ravel())
+        power   = power_curve[indices,2]
+        power   = power.reshape(n_wind_instances,n_turbs)
+
     # Farm power for single wind instance 
+    # print(power)
+    # print(power1)
     power   = np.sum(power, axis=1)
     
     # multiply the respective values with the wind instance probabilities 
@@ -602,6 +630,8 @@ def getAEP(turb_rad, turb_coords, power_curve, wind_inst_freq,
         return AEP, sped_deficit_eff
     else:
         return(AEP)
+
+
     
 def getAEP_for_optimiser(turb_rad, turb_coords, power_curve, wind_inst_freq, 
             n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t, with_deficit = False):
@@ -730,6 +760,7 @@ def checkConstraints(turb_coords, turb_diam):
         #     breakpoint()
 
         if (inside_farm == False or correct_clrnc == False):
+            print("Perimeter mei nhi hai")
             peri_constr_viol = True
             break
     
@@ -739,6 +770,8 @@ def checkConstraints(turb_coords, turb_diam):
         for turb2 in np.delete(turb_coords, i, axis=0):
             if  np.linalg.norm(turb1 - turb2) < 4*turb_diam:
                 prox_constr_viol = True
+                print("zyada paas hogaya")
+                print("found two ppl with {}".format(np.linalg.norm(turb1 - turb2)))
                 break
     
     #return success flag befor printing

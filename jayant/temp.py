@@ -1,6 +1,7 @@
 # temp.py
 # from evaluate import 
 import numpy as np
+from utils import initialise_file
 import pandas as pd
 
 f = open('optimal_50.txt', 'r')
@@ -26,6 +27,8 @@ pts = 3900*pts + 50
 from utils import *
 from constants import *
 
+
+coords = initialise_file("submissions/specific_year_2015temp_590.3029779052735_avg_aep_100000_iterations_2020-09-25 003909.877309.csv")
 years = [2007, 2008, 2009, 2013, 2014, 2015, 2017]
 # years = [2007]
 year_wise_dist = np.array([binWindResourceData('../data/WindData/wind_data_{}.csv'.format(year)) for year in years])
@@ -45,6 +48,6 @@ wind_inst_freq = np.mean(year_wise_dist, axis = 0)
 # np.savetxt(f, pts, delimiter=',', header='x,y', comments='', fmt='%1.8f')
 # f.close()
 
-pts = pd.read_csv("submissions/best.csv", header = None)
-pts = pts.to_numpy()[1:].astype("float")
-score(pts, wind_inst_freq, True)
+# pts = pd.read_csv("submissions/best.csv", header = None)
+# pts = pts.to_numpy()[1:].astype("float")
+score(coords, wind_inst_freq, True)

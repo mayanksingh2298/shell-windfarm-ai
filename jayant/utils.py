@@ -3,6 +3,7 @@ from evaluate import checkConstraints, binWindResourceData, getAEP, loadPowerCur
 import numpy as np
 from constants import *
 import random
+import pandas as pd
 
 def initialise_valid():
 	#for now return the same everytime to compare methods etc
@@ -83,12 +84,12 @@ def initialise_max():
 	pts = 3900*pts + 50
 	return pts
 
-def score(coords, wind_inst_freq, to_print = False, with_deficit = False):
+def score(coords, wind_inst_freq, to_print = False, with_deficit = False, continuous = False, smooth_shadows = False):
 	success = checkConstraints(coords, turb_diam)
 	if not success:
 		return MINIMUM 
 	ret = getAEP(turb_rad, coords, power_curve, wind_inst_freq, 
-		n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t, with_deficit) 
+		n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t, with_deficit, continuous, smooth_shadows) 
 	if with_deficit:
 		AEP, deficit = ret
 	else:
@@ -102,10 +103,10 @@ def score(coords, wind_inst_freq, to_print = False, with_deficit = False):
 	else:
 		return AEP
 
-def delta_score(coords, wind_inst_freq, chosen, new_x, new_y, original_deficit):
+def delta_score(coords, wind_inst_freq, chosen, new_x, new_y, original_deficit,continuous = False,  smooth_shadows = False):
 	return delta_AEP(turb_rad, coords, power_curve, wind_inst_freq, 
 	            n_wind_instances, cos_dir1, sin_dir1, wind_sped_stacked, C_t_direct,
-	            chosen, new_x, new_y, original_deficit)
+	            chosen, new_x, new_y, original_deficit, continuous,  smooth_shadows)
 
 def delta_loss(coords, wind_inst_freq, chosen, new_x, new_y, original_deficit):
 	return delta_deficit(turb_rad, coords, power_curve, wind_inst_freq, 
@@ -127,7 +128,7 @@ def ignore_speed(arr):
 def delta_check_constraints(coords, chosen, new_x, new_y):
     if not (50 < new_x < 3950 and 50 < new_y < 3950):
     	# print(new_)
-    	print("perimeter violation")
+    	# print("perimeter violation")
     	# breakpoint()
     	return False
 
@@ -135,7 +136,7 @@ def delta_check_constraints(coords, chosen, new_x, new_y):
     for i in range(coords.shape[0]):
     	if i != chosen:
     		if np.linalg.norm(coords[i] - pt) <= 400:
-    			print("too near")
+    			# print("too near")
     			# breakpoint()
     			return False
     return True
@@ -163,7 +164,7 @@ def fetch_movable_segments(coords, chosen, direction):
 		theta += 1e-10 #its improbable that we get the exact angle zero
 
 	pts = []
-	eps = 1e-10
+	eps = 1e-6
 	low_lim = 50+eps
 	upper_lim = 3950 - eps
 	pts.append((low_lim, y + np.tan(theta)*(low_lim - x) ))
