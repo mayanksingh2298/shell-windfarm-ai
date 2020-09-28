@@ -5,7 +5,7 @@ import numpy as np
 
 MAXIMUM = 10**10
 MINIMUM = -10**10
-PRECISION = 10**(-3)
+PRECISION = 10e-10
 
 turb_specs    =  {   
                      'Name': 'Anon Name',
@@ -39,3 +39,8 @@ n_slices_sped = len(slices_sped)-1
 n_wind_instances = (n_slices_drct)*(n_slices_sped)
 
 n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t = preProcessing(power_curve)
+
+cos_dir1 = cos_dir[[i*n_slices_sped for i in range(n_slices_drct)]]
+sin_dir1 = sin_dir[[i*n_slices_sped for i in range(n_slices_drct)]]
+C_t1 = C_t[[i*n_slices_sped for i in range(n_slices_drct)], :, :]
+C_t_direct = 1-np.sqrt(1-C_t[:,:,0])
