@@ -7,13 +7,13 @@ import time
 from args import make_args
 from tqdm import tqdm
 from utils import score, initialise_valid, initialise_periphery, min_dist_from_rest, delta_score, delta_check_constraints, fetch_movable_segments
-from utils import min_dis
+from utils import min_dis, initialise_file
 from constants import *
 
 
 args = make_args()
-NN = 2
-GREEDY = 0.5
+NN = 1
+GREEDY = 0.7
 
 def save_csv(coords):
 	f = open("submissions/{}temp_{}_avg_aep_{}_iterations_{}.csv"
@@ -31,7 +31,10 @@ if __name__ == "__main__":
 	wind_inst_freq = np.mean(year_wise_dist, axis = 0) #over all years
 
 	iteration = 0
-	coords = initialise_periphery()
+	if args.file is None:
+		coords = initialise_periphery()
+	else:
+		coords = initialise_file(args.file)
 
 	total_iterations = 0
 	num_restarts = 0
@@ -61,33 +64,33 @@ if __name__ == "__main__":
 		# get all possible segments
 		# use the midpoints 
 
-		direction = np.random.uniform(0, 2*np.pi)
-		# if np.random.uniform() > GREEDY:
-		# 	direction = np.random.uniform(0, 2*np.pi)
-		# else:
-		# 	x, y = coords[chosen]
-		# 	vi = np.array([x,y])
-		# 	dists = []
-		# 	points = []
-		# 	for i, (x_dash, y_dash) in enumerate(coords):
-		# 	    if i != chosen:
-		# 	       dists.append(((x - x_dash)**2 + (y - y_dash)**2))
-		# 	       points.append((x_dash, y_dash))
-		# 	# dists.sort()
-		# 	indices = np.argpartition(dists, NN)
+		# direction = np.random.uniform(0, 2*np.pi)
+		if np.random.uniform() > GREEDY:
+			direction = np.random.uniform(0, 2*np.pi)
+		else:
+			x, y = coords[chosen]
+			vi = np.array([x,y])
+			dists = []
+			points = []
+			for i, (x_dash, y_dash) in enumerate(coords):
+			    if i != chosen:
+			       dists.append(((x - x_dash)**2 + (y - y_dash)**2))
+			       points.append((x_dash, y_dash))
+			# dists.sort()
+			indices = np.argpartition(dists, NN)
 
-		# 	# v = 1e-5*np.ones(2)
-		# 	v = np.zeros(2)
-		# 	for i in indices[:NN]:
-		# 	    v += np.array([x - points[i][0], y - points[i][1]])
-		# 	norm = np.linalg.norm(v)
-		# 	if norm < 1e-10:
-		# 		direction = np.random.uniform(0, 2*np.pi)
-		# 	else:		
-		# 		v = v / np.linalg.norm(v)
-		# 		theta_v = np.arccos(v[0])
-		# 		# direction = np.random.normal(theta_v, 0.1)
-		# 		direction = np.random.normal(theta_v, np.pi/6)
+			# v = 1e-5*np.ones(2)
+			v = np.zeros(2)
+			for i in indices[:NN]:
+			    v += np.array([x - points[i][0], y - points[i][1]])
+			norm = np.linalg.norm(v)
+			if norm < 1e-10:
+				direction = np.random.uniform(0, 2*np.pi)
+			else:		
+				v = v / np.linalg.norm(v)
+				theta_v = np.arccos(v[0])
+				# direction = np.random.normal(theta_v, 0.1)
+				direction = np.random.normal(theta_v, np.pi/12)
 
 
 

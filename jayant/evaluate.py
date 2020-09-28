@@ -79,6 +79,7 @@ import warnings
 warnings.filterwarnings("ignore")
 # from constants import *
 
+SMOOTHENING_FACTOR = 0.0001  
 
 
 # def getTurbLoc(turb_loc_file_name):
@@ -608,12 +609,20 @@ def contribution(turb_rad, turb_coords, power_curve, wind_inst_freq,
         mine_on_others[((x_dist <= 0) | ((x_dist > 0) & (y_dist > (turb_rad + 0.05*np.abs(x_dist)))))] = 0.0
         others_on_me[((x_dist >= 0) | ((x_dist < 0) & (y_dist > (turb_rad + 0.05*np.abs(x_dist)))))] = 0.0
     else:
-        sped_deficit = (C_t_direct)*((turb_rad/(turb_rad + 0.05*np.abs(x_dist)))**2)*(1/(1 + np.exp(y_dist/(turb_rad + 0.05*np.abs(x_dist)) - 0.75)))
+        indices_on_the_side = (y_dist > (turb_rad + 0.05*np.abs(x_dist)))
+
+        sped_deficit = (C_t_direct)*((turb_rad/(turb_rad + 0.05*np.abs(x_dist)))**2)
+        decay = (1/(1 + (y_dist - (turb_rad + 0.05*np.abs(x_dist)))/SMOOTHENING_FACTOR))
+
+        sped_deficit[indices_on_the_side] = sped_deficit[indices_on_the_side]*decay[indices_on_the_side]
+        
         mine_on_others = sped_deficit.copy()
         others_on_me = sped_deficit.copy()
 
         mine_on_others[((x_dist <= 0))] = 0.0
         others_on_me[((x_dist >= 0))] = 0.0
+
+
     # others_on_me[((x_dist <= 0) | ((x_dist > 0) & (y_dist > (turb_rad + 0.05*np.abs(x_dist)))))] = 0.0
     # mine_on_others[((x_dist >= 0) | ((x_dist < 0) & (y_dist > (turb_rad + 0.05*np.abs(x_dist)))))] = 0.0
     
@@ -866,12 +875,18 @@ def getAEP(turb_rad, turb_coords, power_curve, wind_inst_freq,
     # For some values of x_dist here RuntimeWarning: divide by zero may occur
     # That occurs for negative x_dist. Those we anyway mark as zeros. 
 
-    # if not smooth_shadows:
-    sped_deficit = (1-np.sqrt(1-C_t))*((turb_rad/(turb_rad + 0.05*x_dist))**2)  #yaahn pe we can make x_dist abs, cause baad mei neg ki toh hatadenge waise bhi
-    sped_deficit[((x_dist <= 0) | ((x_dist > 0) & (y_dist > (turb_rad + 0.05*x_dist))))] = 0.0
-    # else:
-    #     sped_deficit = (1-np.sqrt(1-C_t))*((turb_rad/(turb_rad + 0.05*x_dist))**2)*(1/(1 + np.exp(y_dist/(turb_rad + 0.05*np.abs(x_dist)) - 0.75))) #yaahn pe we can make x_dist abs, cause baad mei neg ki toh hatadenge waise bhi
-    #     sped_deficit[((x_dist <= 0))] = 0.0
+    if not smooth_shadows:
+        sped_deficit = (1-np.sqrt(1-C_t))*((turb_rad/(turb_rad + 0.05*x_dist))**2)  #yaahn pe we can make x_dist abs, cause baad mei neg ki toh hatadenge waise bhi
+        sped_deficit[((x_dist <= 0) | ((x_dist > 0) & (y_dist > (turb_rad + 0.05*x_dist))))] = 0.0
+    else:
+        # sped_deficit = (1-np.sqrt(1-C_t))*((turb_rad/(turb_rad + 0.05*x_dist))**2)
+        indices_in_wake = (x_dist > 0)
+        indices_on_the_side = (x_dist > 0) & (y_dist > (turb_rad + 0.05*x_dist))
+        sped_deficit = np.zeros(x_dist.shape, dtype = 'float32')
+        sped_deficit[indices_in_wake] = ((1-np.sqrt(1-C_t))*((turb_rad/(turb_rad + 0.05*x_dist))**2))[indices_in_wake]
+        decay = (1/(1 + (y_dist - (turb_rad + 0.05*x_dist))/SMOOTHENING_FACTOR))
+        sped_deficit[indices_on_the_side] = sped_deficit[indices_on_the_side]*decay[indices_on_the_side]
+
     # sped_deficit[((x_dist <= 0))] = 0.0
     
     

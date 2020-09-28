@@ -113,6 +113,7 @@ if __name__ == "__main__":
 		
 
 		entered = False
+		random.shuffle(possibilities)
 		for ind, (new_x, new_y) in enumerate(possibilities):
 			if not delta_check_constraints(coords, chosen, new_x, new_y):
 				print("ERROR")
@@ -133,13 +134,13 @@ if __name__ == "__main__":
 			# print("Chose windmill {} but no improvement in this direction; happened {} consecutive times before this".format(chosen, iters_with_no_inc))
 			iters_with_no_inc += 1
 
-			# if np.random.uniform() < 0.0003 and entered:
-			# 	print("going mad")
-			# 	if new_score >= file_score:
-			# 		save_csv(coords)
-			# 	coords[chosen][0], coords[chosen][1] = new_x, new_y
-			# 	old_score = new_score
-			# 	original_deficit = new_deficit
+			if np.random.uniform() < 0.00005 and entered:
+				print("going mad")
+				if new_score >= file_score - 0.1:
+					save_csv(coords)
+				coords[chosen][0], coords[chosen][1] = new_x, new_y
+				old_score = new_score
+				original_deficit = new_deficit
 
 
 		else:

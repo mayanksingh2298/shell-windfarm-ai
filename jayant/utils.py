@@ -99,6 +99,8 @@ def score(coords, wind_inst_freq, to_print = False, with_deficit = False, contin
 		AEP = ret
 
 	if to_print:
+		if continuous:
+			print('Approximate ', end = '')
 		print('Average AEP over train years is {}', "%.12f"%(AEP), 'GWh')
 
 	if with_deficit:

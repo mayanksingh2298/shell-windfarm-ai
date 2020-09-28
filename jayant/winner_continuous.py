@@ -15,6 +15,8 @@ args = make_args()
 NN = 1
 GREEDY = 0.7
 
+GREEDY_WINDMILL = 0.8
+
 def save_csv(coords):
 	f = open("submissions/{}temp_{}_avg_aep_{}_iterations_{}.csv"
 		.format("" if args.year is None else "specific_year_{}".format(args.year), score(coords, wind_inst_freq),iteration, str(datetime.now()).replace(':','')), "w")
@@ -40,7 +42,7 @@ if __name__ == "__main__":
 	num_restarts = 0
 	iters_with_no_inc = 0
 	old_score, original_deficit = score(coords,wind_inst_freq, True, True, True) 
-
+	greed = np.array([5 for _ in range(50)])
 	# sys.exit()
 	while(True):
 		if iteration%5000 == 0:
@@ -53,7 +55,11 @@ if __name__ == "__main__":
 
 		total_iterations += 1
 		iteration += 1
-		chosen = np.random.randint(0,50) #50 is not included
+
+		if np.random.uniform() < GREEDY_WINDMILL:
+			chosen = np.random.choice(np.argwhere((greed==greed.max())).reshape(-1))
+		else:
+			chosen = np.random.randint(0,50) #50 is not included
 		x, y = coords[chosen]
 		found = False
 		best_ind = -1
@@ -130,10 +136,17 @@ if __name__ == "__main__":
 		if best_ind == -1:
 			# print("Chose windmill {} but no improvement in this direction; happened {} consecutive times before this".format(chosen, iters_with_no_inc))
 			iters_with_no_inc += 1
+			greed[chosen] = max(1, greed[chosen] - 1)
 
 		else:
 			print("Total iter num: {} ".format(total_iterations))
 			print("Chose windmill {} and got an improvement of {} units in the average AEP".format(chosen, best_score - old_score))
+			if (best_score - old_score) > 0:
+				greed[chosen] += 1
+			else:
+				greed[chosen] = max(1, greed[chosen] - 1)
+
+
 			iters_with_no_inc = 0 #because we are considering such consecutive iters	
 			# score(chosen, )
 			coords[chosen][0], coords[chosen][1] = possibilities[best_ind]
@@ -141,6 +154,7 @@ if __name__ == "__main__":
 			original_deficit = best_deficit
 			print("approximate average : {}".format(old_score))
 			print()
+
 
 	print("DONE")		 
 	save_csv(coords)

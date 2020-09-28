@@ -8,7 +8,7 @@ from tqdm import tqdm
 from utils import score, initialise_valid, initialise_periphery, min_dist_from_rest, delta_score, delta_check_constraints, fetch_movable_segments
 from utils import min_dis, initialise_file
 from constants import *
-
+import time 
 args = make_args()
 NN = 1
 GREEDY = 0.7
@@ -25,11 +25,12 @@ if __name__ == "__main__":
 	if args.year is None:
 		years = [2007, 2008, 2009, 2013, 2014, 2015, 2017]
 	else:
+		print("not supported")
+		sys.exit()
 		years = [args.year]
-	year_wise_dist = np.array([binWindResourceData('../data/WindData/wind_data_{}.csv'.format(year)) for year in years])
+	year_wise_dist = ([binWindResourceData('../data/WindData/wind_data_{}.csv'.format(year)) for year in years])
 	wind_inst_freq = np.mean(year_wise_dist, axis = 0) #over all years
 
-	iteration = -1
 
 	if args.file is None:
 		coords = initialise_periphery()
@@ -40,11 +41,23 @@ if __name__ == "__main__":
 	num_restarts = 0
 	iters_with_no_inc = 0
 	old_score, original_deficit = score(coords,wind_inst_freq, True, True, False) 
-	file_score = old_score
+
+	# current_dist = np.random.choice(year_wise_dist)
 	# sys.exit()
+	iteration = 0
 	while(True):
+		if iteration%5000 == 0:
+			print("true score is ")
+			score(coords,wind_inst_freq, True, True, False)
+			sample = int(np.random.uniform()*7)
+			print("chose year number {}".format(years[sample]))
+			current_dist = year_wise_dist[sample]
+			old_score, original_deficit = score(coords,current_dist, False, True, False)
+			# print("")
+			time.sleep(5)
+
 		if iteration%50000 == 0:
-			print("saving")
+			print("saving and changing")
 			save_csv(coords)
 
 		total_iterations += 1
@@ -54,13 +67,12 @@ if __name__ == "__main__":
 		found = False
 		best_ind = -1
 		best_score = old_score + min_thresh_to_move
-
 		#code here
 		# sample a direction
 		# get all possible segments
 		# use the midpoints 
-
 		direction = np.random.uniform(0, 2*np.pi)
+
 		# if np.random.uniform() > GREEDY:
 		# 	direction = np.random.uniform(0, 2*np.pi)
 		# else:
@@ -102,25 +114,22 @@ if __name__ == "__main__":
 		# possibilities += [((samples[i]*a[0]+ (1-samples[i])*b[0]), (samples[i]*a[1] + (1-samples[i])*b[1])) for i,(a,b) in enumerate(segments)]
 		# possibilities += [((samples[i]*a[0]+ (1-samples[i])*b[0]), (samples[i]*a[1] + (1-samples[i])*b[1])) for i,(a,b) in enumerate(segments)]
 
-		#centres
-		# possibilities += [((a[0]+ b[0])/2, (a[1] + b[1])/2) for a,b in segments]
-		# # #lefts
-		# possibilities += [((0.999*a[0]+ 0.001*b[0]), (0.999*a[1] + 0.001*b[1])) for a,b in segments]
-		# # possibilities += [((0.999999*a[0]+ 0.000001*b[0]), (0.999999*a[1] + 0.000001*b[1])) for a,b in segments]
-		# # # #rights
-		# possibilities += [((0.001*a[0]+ 0.999*b[0]), (0.001*a[1] + 0.999*b[1])) for a,b in segments]
-		# # possibilities += [((0.000001*a[0]+ 0.999999*b[0]), (0.000001*a[1] + 0.999999*b[1])) for a,b in segments]
+		# #centres
+		possibilities += [((a[0]+ b[0])/2, (a[1] + b[1])/2) for a,b in segments]
+		# #lefts
+		possibilities += [((0.999*a[0]+ 0.001*b[0]), (0.999*a[1] + 0.001*b[1])) for a,b in segments]
+		# # #rights
+		possibilities += [((0.001*a[0]+ 0.999*b[0]), (0.001*a[1] + 0.999*b[1])) for a,b in segments]
 		
 
-		entered = False
 		for ind, (new_x, new_y) in enumerate(possibilities):
 			if not delta_check_constraints(coords, chosen, new_x, new_y):
 				print("ERROR")
 				# sys.exit()
 				continue
-			entered = True
+
 			# new_score = score(copied, wind_inst_freq)
-			new_score, new_deficit = delta_score(coords, wind_inst_freq, chosen, new_x, new_y, original_deficit)
+			new_score, new_deficit = delta_score(coords, current_dist, chosen, new_x, new_y, original_deficit)
 			# improvement = new_score - old_score
 
 			if new_score >= best_score:
@@ -132,15 +141,6 @@ if __name__ == "__main__":
 		if best_ind == -1:
 			# print("Chose windmill {} but no improvement in this direction; happened {} consecutive times before this".format(chosen, iters_with_no_inc))
 			iters_with_no_inc += 1
-
-			# if np.random.uniform() < 0.0003 and entered:
-			# 	print("going mad")
-			# 	if new_score >= file_score:
-			# 		save_csv(coords)
-			# 	coords[chosen][0], coords[chosen][1] = new_x, new_y
-			# 	old_score = new_score
-			# 	original_deficit = new_deficit
-
 
 		else:
 			print("Chose windmill {} and got an improvement of {} units in the average AEP".format(chosen, best_score - old_score))
