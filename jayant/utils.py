@@ -137,13 +137,21 @@ def delta_check_constraints(coords, chosen, new_x, new_y):
     	# breakpoint()
     	return False
 
+    temp = coords[chosen].copy()
+    coords[chosen] = np.array([1e7, 1e7], dtype = np.float32)
+
     pt = np.array([new_x, new_y])
-    for i in range(coords.shape[0]):
-    	if i != chosen:
-    		if np.linalg.norm(coords[i] - pt) <= 400:
-    			# print("too near")
-    			# breakpoint()
-    			return False
+    mindy = np.linalg.norm(coords - pt, axis = 1).min()
+    coords[chosen] = temp
+
+    if mindy <= 400:
+    	return False
+    # for i in range(coords.shape[0]):
+    # 	if i != chosen:
+    # 		if np.linalg.norm(coords[i] - pt) <= 400:
+    # 			# print("too near")
+    # 			# breakpoint()
+    # 			return False
     return True
 
 
@@ -264,3 +272,29 @@ def fetch_movable_segments(coords, chosen, direction):
 		ans.append((constraints[rightmost][1], right))
 
 	return ans
+
+def initialise_random():
+	pts = np.full((50,2), 1e7, dtype =np.float32)
+	counter = 0
+	while(counter < 50):
+		# while(True):
+		sample = np.random.uniform(50, 3950, size =2).astype(np.float32)
+
+		if 50 <= sample[0] <= 3950 and 50 <= sample[1] <= 3950:
+			if counter == 0:
+				#chill
+				# pass
+				pts[counter] = sample.reshape(1,-1)
+				counter += 1
+				print(counter)
+			else:
+				mindy = np.linalg.norm(pts[:counter] - sample, axis = 1).min()
+				if mindy <= 400:
+					continue
+				else:
+					pts[counter] = sample
+					counter += 1
+					# print(counter)
+					# break
+
+	return pts

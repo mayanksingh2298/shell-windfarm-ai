@@ -6,16 +6,16 @@ import random
 from args import make_args
 from tqdm import tqdm
 from utils import score, initialise_valid, initialise_periphery, min_dist_from_rest, delta_score, delta_check_constraints, fetch_movable_segments
-from utils import min_dis, initialise_file
+from utils import min_dis, initialise_file,  initialise_random
 from constants import *
 
 args = make_args()
 NN = 1
-# GREEDY = 0.7
+GREEDY = 0.7
 
 def save_csv(coords):
 	f = open("submissions/{}temp_{}_avg_aep_{}_iterations_{}.csv"
-		.format("" if args.year is None else "specific_year_{}".format(args.year), round(score(coords, wind_inst_freq),6),iteration, str(datetime.now()).replace(':','')), "w")
+		.format("" if args.year is None else "specific_year_{}".format(args.year), score(coords, wind_inst_freq),iteration, str(datetime.now()).replace(':','')), "w")
 	np.savetxt(f, coords, delimiter=',', header='x,y', comments='', fmt='%1.8f')
 	f.close()
 
@@ -32,7 +32,7 @@ if __name__ == "__main__":
 	iteration = -1
 
 	if args.file is None:
-		coords = initialise_periphery()
+		coords = initialise_random()
 	else:
 		coords = initialise_file(args.file)
 
@@ -133,6 +133,13 @@ if __name__ == "__main__":
 			# print("Chose windmill {} but no improvement in this direction; happened {} consecutive times before this".format(chosen, iters_with_no_inc))
 			iters_with_no_inc += 1
 
+			# if np.random.uniform() < 0.0003 and entered:
+			# 	print("going mad")
+			# 	if new_score >= file_score:
+			# 		save_csv(coords)
+			# 	coords[chosen][0], coords[chosen][1] = new_x, new_y
+			# 	old_score = new_score
+			# 	original_deficit = new_deficit
 
 
 		else:
