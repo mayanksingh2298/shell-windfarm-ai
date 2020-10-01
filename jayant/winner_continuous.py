@@ -19,7 +19,7 @@ GREEDY_WINDMILL = 0.8
 
 def save_csv(coords):
 	f = open("submissions/{}temp_{}_avg_aep_{}_iterations_{}.csv"
-		.format("" if args.year is None else "specific_year_{}".format(args.year), score(coords, wind_inst_freq),iteration, str(datetime.now()).replace(':','')), "w")
+		.format("" if args.year is None else "specific_year_{}".format(args.year), round(score(coords, wind_inst_freq),6),iteration, str(datetime.now()).replace(':','')), "w")
 	np.savetxt(f, coords, delimiter=',', header='x,y', comments='', fmt='%1.8f')
 	f.close()
 
