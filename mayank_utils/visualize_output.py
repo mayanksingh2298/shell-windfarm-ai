@@ -18,8 +18,30 @@ def getTurbLoc(turb_loc_file_name):
 
 if __name__=="__main__":
     N = 50
+
+    fig, ax = plt.subplots(figsize=(8,8))
+
+    n = list(range(50))
+
+    ax.set_aspect('equal', 'box')
+
     coords = getTurbLoc(sys.argv[1])
     x = coords[:,0]
     y = coords[:,1]
-    plt.scatter(x, y)
+    ax.scatter(x, y, c='blue')
+
+    x = range(50,3950,1)
+    y = range(50,3950,1)
+    ax.plot(x, y, c='red')
+
+    # for i, txt in enumerate(n):
+    #     ax.annotate(txt, (x[i]-20, y[i]-20))
+
+    # coords = getTurbLoc(sys.argv[2])
+    # x = coords[:,0]
+    # y = coords[:,1]
+    # ax.scatter(x, y, c='red')
+    # for i, txt in enumerate(n):
+    #     ax.annotate(txt, (x[i]+20, y[i]+20))
+
     plt.show()
