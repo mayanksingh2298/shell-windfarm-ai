@@ -6,12 +6,12 @@ import random
 from args import make_args
 from tqdm import tqdm
 from utils import score, initialise_valid, initialise_periphery, min_dist_from_rest, delta_score, delta_check_constraints, fetch_movable_segments
-from utils import min_dis, initialise_file
+from utils import min_dis, initialise_file, initialise_random
 from constants import *
 
 args = make_args()
 NN = 1
-# GREEDY = 0.7
+GREEDY = 0.7
 
 def save_csv(coords):
 	f = open("submissions/{}temp_{}_avg_aep_{}_iterations_{}.csv"
@@ -32,7 +32,8 @@ if __name__ == "__main__":
 	iteration = -1
 
 	if args.file is None:
-		coords = initialise_periphery()
+		# coords = initialise_periphery()
+		coords = initialise_random()
 	else:
 		coords = initialise_file(args.file)
 
@@ -60,33 +61,33 @@ if __name__ == "__main__":
 		# get all possible segments
 		# use the midpoints 
 
-		direction = np.random.uniform(0, 2*np.pi)
-		# if np.random.uniform() > GREEDY:
-		# 	direction = np.random.uniform(0, 2*np.pi)
-		# else:
-		# 	x, y = coords[chosen]
-		# 	vi = np.array([x,y])
-		# 	dists = []
-		# 	points = []
-		# 	for i, (x_dash, y_dash) in enumerate(coords):
-		# 	    if i != chosen:
-		# 	       dists.append(((x - x_dash)**2 + (y - y_dash)**2))
-		# 	       points.append((x_dash, y_dash))
-		# 	# dists.sort()
-		# 	indices = np.argpartition(dists, NN)
+		# direction = np.random.uniform(0, 2*np.pi)
+		if np.random.uniform() > GREEDY:
+			direction = np.random.uniform(0, 2*np.pi)
+		else:
+			x, y = coords[chosen]
+			vi = np.array([x,y])
+			dists = []
+			points = []
+			for i, (x_dash, y_dash) in enumerate(coords):
+			    if i != chosen:
+			       dists.append(((x - x_dash)**2 + (y - y_dash)**2))
+			       points.append((x_dash, y_dash))
+			# dists.sort()
+			indices = np.argpartition(dists, NN)
 
-		# 	# v = 1e-5*np.ones(2)
-		# 	v = np.zeros(2)
-		# 	for i in indices[:NN]:
-		# 	    v += np.array([x - points[i][0], y - points[i][1]])
-		# 	norm = np.linalg.norm(v)
-		# 	if norm < 1e-10:
-		# 		direction = np.random.uniform(0, 2*np.pi)
-		# 	else:		
-		# 		v = v / np.linalg.norm(v)
-		# 		theta_v = np.arccos(v[0])
-		# 		# direction = np.random.normal(theta_v, 0.1)
-		# 		direction = np.random.normal(theta_v, np.pi/12)
+			# v = 1e-5*np.ones(2)
+			v = np.zeros(2)
+			for i in indices[:NN]:
+			    v += np.array([x - points[i][0], y - points[i][1]])
+			norm = np.linalg.norm(v)
+			if norm < 1e-10:
+				direction = np.random.uniform(0, 2*np.pi)
+			else:		
+				v = v / np.linalg.norm(v)
+				theta_v = np.arccos(v[0])
+				# direction = np.random.normal(theta_v, 0.1)
+				direction = np.random.normal(theta_v, np.pi/12)
 
 
 
@@ -102,13 +103,13 @@ if __name__ == "__main__":
 		# possibilities += [((samples[i]*a[0]+ (1-samples[i])*b[0]), (samples[i]*a[1] + (1-samples[i])*b[1])) for i,(a,b) in enumerate(segments)]
 		# possibilities += [((samples[i]*a[0]+ (1-samples[i])*b[0]), (samples[i]*a[1] + (1-samples[i])*b[1])) for i,(a,b) in enumerate(segments)]
 
-		#centres
-		# possibilities += [((a[0]+ b[0])/2, (a[1] + b[1])/2) for a,b in segments]
-		# # #lefts
-		# possibilities += [((0.999*a[0]+ 0.001*b[0]), (0.999*a[1] + 0.001*b[1])) for a,b in segments]
-		# # possibilities += [((0.999999*a[0]+ 0.000001*b[0]), (0.999999*a[1] + 0.000001*b[1])) for a,b in segments]
-		# # # #rights
-		# possibilities += [((0.001*a[0]+ 0.999*b[0]), (0.001*a[1] + 0.999*b[1])) for a,b in segments]
+		# centres
+		possibilities += [((a[0]+ b[0])/2, (a[1] + b[1])/2) for a,b in segments]
+		# #lefts
+		possibilities += [((0.999*a[0]+ 0.001*b[0]), (0.999*a[1] + 0.001*b[1])) for a,b in segments]
+		# possibilities += [((0.999999*a[0]+ 0.000001*b[0]), (0.999999*a[1] + 0.000001*b[1])) for a,b in segments]
+		# # #rights
+		possibilities += [((0.001*a[0]+ 0.999*b[0]), (0.001*a[1] + 0.999*b[1])) for a,b in segments]
 		# possibilities += [((0.000001*a[0]+ 0.999999*b[0]), (0.000001*a[1] + 0.999999*b[1])) for a,b in segments]
 		
 		random.shuffle(possibilities)
@@ -133,6 +134,13 @@ if __name__ == "__main__":
 			# print("Chose windmill {} but no improvement in this direction; happened {} consecutive times before this".format(chosen, iters_with_no_inc))
 			iters_with_no_inc += 1
 
+			# if np.random.uniform() < 0.0003 and entered:
+			# 	print("going mad")
+			# 	if new_score >= file_score:
+			# 		save_csv(coords)
+			# 	coords[chosen][0], coords[chosen][1] = new_x, new_y
+			# 	old_score = new_score
+			# 	original_deficit = new_deficit
 
 
 		else:

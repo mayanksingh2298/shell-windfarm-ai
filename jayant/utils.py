@@ -3,6 +3,7 @@ from evaluate import checkConstraints, binWindResourceData, getAEP, loadPowerCur
 import numpy as np
 from constants import *
 import random
+import pandas as pd
 
 def initialise_valid():
 	#for now return the same everytime to compare methods etc
@@ -32,11 +33,14 @@ def initialise_valid():
 			data.append((x,y))
 
 	random.shuffle(data)
-	return np.array(data[:50])
+	return np.array(data[:50], dtype = 'float32')
 
 #from rajas
 def initialise_file(filename):
-	return pd.read_csv(filename).to_numpy()
+	# return pd.read_csv(filename).to_numpy()
+	df = pd.read_csv(filename, sep=',', dtype = np.float32)
+	turb_coords = df.to_numpy(dtype = np.float32)
+	return turb_coords
 
 def initialise_periphery():
 	data = []
@@ -60,7 +64,7 @@ def initialise_periphery():
 			data.append((x,y)) 
 
 	# random.shuffle(data)
-	return np.array(data[:50])
+	return np.array(data[:50], dtype = 'float32')
 
 def initialise_max():
 	# import numpy as np
@@ -74,7 +78,7 @@ def initialise_max():
 		_, x, y = [float(i) for i in a.split()]
 		pts.append((x,y))
 
-	pts = np.array(pts)
+	pts = np.array(pts, dtype = 'float32')
 
 	# pts = 2*pts
 	pts = pts*(1/(1-(2-M_EPS)*(0.071377103865)))
@@ -83,18 +87,20 @@ def initialise_max():
 	pts = 3900*pts + 50
 	return pts
 
-def score(coords, wind_inst_freq, to_print = False, with_deficit = False):
+def score(coords, wind_inst_freq, to_print = False, with_deficit = False, continuous = False, smooth_shadows = False):
 	success = checkConstraints(coords, turb_diam)
 	if not success:
 		return MINIMUM 
 	ret = getAEP(turb_rad, coords, power_curve, wind_inst_freq, 
-		n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t, with_deficit) 
+		n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t, with_deficit, continuous, smooth_shadows) 
 	if with_deficit:
 		AEP, deficit = ret
 	else:
 		AEP = ret
 
 	if to_print:
+		if continuous:
+			print('Approximate ', end = '')
 		print('Average AEP over train years is {}', "%.12f"%(AEP), 'GWh')
 
 	if with_deficit:
@@ -102,10 +108,10 @@ def score(coords, wind_inst_freq, to_print = False, with_deficit = False):
 	else:
 		return AEP
 
-def delta_score(coords, wind_inst_freq, chosen, new_x, new_y, original_deficit):
+def delta_score(coords, wind_inst_freq, chosen, new_x, new_y, original_deficit,continuous = False,  smooth_shadows = False):
 	return delta_AEP(turb_rad, coords, power_curve, wind_inst_freq, 
 	            n_wind_instances, cos_dir1, sin_dir1, wind_sped_stacked, C_t_direct,
-	            chosen, new_x, new_y, original_deficit)
+	            chosen, new_x, new_y, original_deficit, continuous,  smooth_shadows)
 
 def delta_loss(coords, wind_inst_freq, chosen, new_x, new_y, original_deficit):
 	return delta_deficit(turb_rad, coords, power_curve, wind_inst_freq, 
@@ -127,17 +133,25 @@ def ignore_speed(arr):
 def delta_check_constraints(coords, chosen, new_x, new_y):
     if not (50 < new_x < 3950 and 50 < new_y < 3950):
     	# print(new_)
-    	print("perimeter violation")
+    	# print("perimeter violation")
     	# breakpoint()
     	return False
 
+    temp = coords[chosen].copy()
+    coords[chosen] = np.array([1e7, 1e7], dtype = np.float32)
+
     pt = np.array([new_x, new_y])
-    for i in range(coords.shape[0]):
-    	if i != chosen:
-    		if np.linalg.norm(coords[i] - pt) <= 400:
-    			print("too near")
-    			# breakpoint()
-    			return False
+    mindy = np.linalg.norm(coords - pt, axis = 1).min()
+    coords[chosen] = temp
+
+    if mindy <= 400:
+    	return False
+    # for i in range(coords.shape[0]):
+    # 	if i != chosen:
+    # 		if np.linalg.norm(coords[i] - pt) <= 400:
+    # 			# print("too near")
+    # 			# breakpoint()
+    # 			return False
     return True
 
 
@@ -160,10 +174,10 @@ def fetch_movable_segments(coords, chosen, direction):
 	x, y = coords[chosen]
 	theta = direction
 	if np.cos(theta) == 0 or np.sin(theta) == 1:
-		theta += 1e-10 #its improbable that we get the exact angle zero
+		theta += np.float32(1e-10) #its improbable that we get the exact angle zero
 
 	pts = []
-	eps = 1e-10
+	eps = np.float32(1e-6)
 	low_lim = 50+eps
 	upper_lim = 3950 - eps
 	pts.append((low_lim, y + np.tan(theta)*(low_lim - x) ))
@@ -190,7 +204,7 @@ def fetch_movable_segments(coords, chosen, direction):
 				#safe
 				continue
 			#problem
-			delta = (((400+eps)**2 - dis**2))**0.5 + 2*eps
+			delta = (((400+eps)**2 - dis**2))**np.float32(0.5) + 2*eps
 
 			x_l, y_l = proj - delta*dir_vec
 			x_r, y_r = proj + delta*dir_vec
@@ -258,3 +272,29 @@ def fetch_movable_segments(coords, chosen, direction):
 		ans.append((constraints[rightmost][1], right))
 
 	return ans
+
+def initialise_random():
+	pts = np.full((50,2), 1e7, dtype =np.float32)
+	counter = 0
+	while(counter < 50):
+		# while(True):
+		sample = np.random.uniform(50, 3950, size =2).astype(np.float32)
+
+		if 50 <= sample[0] <= 3950 and 50 <= sample[1] <= 3950:
+			if counter == 0:
+				#chill
+				# pass
+				pts[counter] = sample.reshape(1,-1)
+				counter += 1
+				print(counter)
+			else:
+				mindy = np.linalg.norm(pts[:counter] - sample, axis = 1).min()
+				if mindy <= 400:
+					continue
+				else:
+					pts[counter] = sample
+					counter += 1
+					# print(counter)
+					# break
+
+	return pts

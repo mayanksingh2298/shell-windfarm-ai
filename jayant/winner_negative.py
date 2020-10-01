@@ -11,10 +11,10 @@ from constants import *
 
 args = make_args()
 NN = 1
-# GREEDY = 0.7
+GREEDY = 0.7
 
 def save_csv(coords):
-	f = open("submissions/{}temp_{}_avg_aep_{}_iterations_{}.csv"
+	f = open("submissions/{}neg_temp_{}_avg_aep_{}_iterations_{}.csv"
 		.format("" if args.year is None else "specific_year_{}".format(args.year), round(score(coords, wind_inst_freq),6),iteration, str(datetime.now()).replace(':','')), "w")
 	np.savetxt(f, coords, delimiter=',', header='x,y', comments='', fmt='%1.8f')
 	f.close()
@@ -42,6 +42,7 @@ if __name__ == "__main__":
 	old_score, original_deficit = score(coords,wind_inst_freq, True, True, False) 
 	file_score = old_score
 	# sys.exit()
+	iters_with_non_pos_increase = 0
 	while(True):
 		if iteration%50000 == 0:
 			print("saving")
@@ -109,10 +110,12 @@ if __name__ == "__main__":
 		# # possibilities += [((0.999999*a[0]+ 0.000001*b[0]), (0.999999*a[1] + 0.000001*b[1])) for a,b in segments]
 		# # # #rights
 		# possibilities += [((0.001*a[0]+ 0.999*b[0]), (0.001*a[1] + 0.999*b[1])) for a,b in segments]
-		# possibilities += [((0.000001*a[0]+ 0.999999*b[0]), (0.000001*a[1] + 0.999999*b[1])) for a,b in segments]
+		# # possibilities += [((0.000001*a[0]+ 0.999999*b[0]), (0.000001*a[1] + 0.999999*b[1])) for a,b in segments]
 		
-		random.shuffle(possibilities)
+
 		entered = False
+		random.shuffle(possibilities)
+		# iters_with_non_pos_increase += 1
 		for ind, (new_x, new_y) in enumerate(possibilities):
 			if not delta_check_constraints(coords, chosen, new_x, new_y):
 				print("ERROR")
@@ -132,7 +135,17 @@ if __name__ == "__main__":
 		if best_ind == -1:
 			# print("Chose windmill {} but no improvement in this direction; happened {} consecutive times before this".format(chosen, iters_with_no_inc))
 			iters_with_no_inc += 1
+			iters_with_non_pos_increase += 1
 
+			# if np.random.uniform() < 0.0003 and entered:
+			if iters_with_non_pos_increase > 10000 and entered:
+				print("going mad")
+				if old_score >= file_score - 0.1:
+					save_csv(coords)
+				coords[chosen][0], coords[chosen][1] = new_x, new_y
+				old_score = new_score
+				original_deficit = new_deficit
+				iters_with_non_pos_increase = 0
 
 
 		else:
@@ -140,6 +153,13 @@ if __name__ == "__main__":
 			print("Total iter num: {} ".format(total_iterations))
 			iters_with_no_inc = 0 #because we are considering such consecutive iters	
 			# score(chosen, )
+
+			if (best_score - old_score) == 0:
+				iters_with_non_pos_increase += 1
+				print("total its with non pos change is {} ".format(iters_with_non_pos_increase))
+			else:
+				iters_with_non_pos_increase = 0
+
 			coords[chosen][0], coords[chosen][1] = possibilities[best_ind]
 			old_score = best_score
 			original_deficit = best_deficit
