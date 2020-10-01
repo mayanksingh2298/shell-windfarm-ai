@@ -7,6 +7,23 @@ MAXIMUM = 10**10
 MINIMUM = -10**10
 PRECISION = 10**(-3)
 
+RANDOM_RESTART_THRESH = 1000000000
+# RANDOM_EPS = args.random_eps
+RANDOM_EPS = True
+# DIRECTIONS = args.directions
+DIRECTIONS = 36
+IMPROVEMENT_THRESH = 0.0001
+GREEDY_TURBINE_PROB = 0.5
+PARALLEL_JOBS = 8
+DELTA = (2*np.pi)/DIRECTIONS
+STEP = 20
+# if RANDOM_EPS:
+    # RANDOM_RESTART_THRESH = 10*RANDOM_RESTART_THRESH
+    # LOWER_LIM = 50
+    # UPPER_LIM = 500
+LOWER_LIM = 50
+UPPER_LIM = 3950
+
 turb_specs    =  {   
                      'Name': 'Anon Name',
                      'Vendor': 'Anon Vendor',
