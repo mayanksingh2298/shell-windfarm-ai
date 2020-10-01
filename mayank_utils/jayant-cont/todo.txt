@@ -1,0 +1,29 @@
+1. Decay EPSILON
+2. Random Restarts
+3. Store visual depiction when reaches local optima, and mark 400m radius ke circles on everyone
+4. beech mei we can randomly send someone to another place where it doesnt cause a problem
+Consider
+5. combine probabilities of all 7 files
+
+1. Numerical Optimisation Techniques, we have 100 parameters
+
+2. another algo would find a circle of diameter 800m, and then choose one of the 50 to take this spot aisa kuch, shuffling the empty spaces, this is a new way of viewing transitions
+
+3. In each step i could also shift the guy to the best position across the grid, dekhna padega complexity etc
+
+4. possibly optimise some other function and evaluate based on the given one
+
+5. initialise with points stuck to the periphery
+
+6. play around with some fixed configurations
+
+7. profile code to find bottlenecks
+
+8. consider the primary wind directionand optimise according to agar sirf voh hot
+
+new optimisation functions, keep dist of all turbs along the perp to the primary direction exaclty 400, isko badhane se zyada fayda nhi hai, jitna along the dir badhane se?
+
+instead of their non continuous non diff func, acc to your understanding define a similar convex differentiable loss
+jisko hum optimise kar payen, and it may give a good soln
+
+instead of optimising the power, optimise loss in velocity, treat directions as unit vectors and build an expression aise, this would work pakka
