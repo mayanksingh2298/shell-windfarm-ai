@@ -34,6 +34,21 @@ def check_possible(coords, chosen, new_check):
 def get_coords(i, j):
 	return np.array([np.random.uniform(i*D, (i+1)*D), np.random.uniform(j*D, (j+1)*D)])
 
+def initialise_valid_discrete():
+	l = []
+	while len(l) < 50:
+		i,j = np.random.randint(0,N), np.random.randint(0,N)
+		new_point = get_coords(i,j)
+		if not (50 < new_point[0] < 3950 and 50 < new_point[1] < 3950):
+			continue
+		min_dist = MAXIMUM
+		for other_point in l:
+			min_dist = min((np.sum((new_point - other_point) ** 2)) ** 0.5, min_dist)
+		if (min_dist < 400 + PRECISION):
+			continue
+		l.append(new_point)
+	return np.array(l)
+
 if __name__ == "__main__":
 	years = [2007, 2008, 2009, 2013, 2014, 2015, 2017]
 	year_wise_dist = np.array([binWindResourceData('../data/WindData/wind_data_{}.csv'.format(year)) for year in years])
@@ -41,7 +56,7 @@ if __name__ == "__main__":
 
 	if len(sys.argv) > 1:
 		coords = pd.read_csv(sys.argv[1]).to_numpy()
-		coords = (coords / D).astype(int).astype(float) * D + D/2
+		# coords = (coords / D).astype(int).astype(float) * D + D/2
 	else:
 		coords = initialise_valid_discrete()
 
