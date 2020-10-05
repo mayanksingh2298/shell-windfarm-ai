@@ -62,21 +62,23 @@ if __name__ == "__main__":
 
 	old_score, original_deficit= score(coords, wind_inst_freq, True, True)
 	
-	for iterno in tqdm(range(1000000)):
-		chosen = np.random.randint(0,50)
-		old_i, old_j = int(coords[chosen][0] / D) * D, int(coords[chosen][1] / D) * D
-		
-		i,j = np.random.randint(0,N), np.random.randint(0,N)
-		new_point = get_coords(i,j)
-		while not check_possible(coords, chosen, new_point):
+	for iterno in tqdm(range(10000000)):
+		temp_deficit = original_deficit
+		DEPTH = np.random.choice([1,2,3], p = [0.4,0.3,0.3])
+		for depth in range(DEPTH):
+			chosen = np.random.randint(0,50)
+			
 			i,j = np.random.randint(0,N), np.random.randint(0,N)
 			new_point = get_coords(i,j)
-		
-		new_score, new_deficit = delta_score(coords, wind_inst_freq, chosen, new_point[0], new_point[1], original_deficit)
+			while not check_possible(coords, chosen, new_point):
+				i,j = np.random.randint(0,N), np.random.randint(0,N)
+				new_point = get_coords(i,j)
+			
+			new_score, temp_deficit = delta_score(coords, wind_inst_freq, chosen, new_point[0], new_point[1], temp_deficit)
 		
 		if new_score >= old_score:
 			old_score = new_score
-			original_deficit = new_deficit
+			original_deficit = temp_deficit
 			coords[chosen] = new_point
 			print (old_score)
 
