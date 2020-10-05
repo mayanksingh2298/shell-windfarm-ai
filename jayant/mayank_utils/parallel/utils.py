@@ -4,7 +4,6 @@ import numpy as np
 from constants import *
 import random
 import pandas as pd
-import time
 
 def initialise_valid():
 	#for now return the same everytime to compare methods etc
@@ -135,6 +134,7 @@ def min_dist_from_rest(chosen, coords, new_x, new_y):
 		return mindy
 	return mindy
 
+
 def min_dis(coords):
     return min([min([np.linalg.norm(coords[i] - coords[j]) for i in range(j+1,50)]) for j in range(50-1)])
 
@@ -143,21 +143,20 @@ def ignore_speed(arr):
 
 
 def delta_check_constraints(coords, chosen, new_x, new_y):
-    if not (50 <= new_x <= 3950 and 50 <= new_y <= 3950):
+    if not (50 < new_x < 3950 and 50 < new_y < 3950):
+    	# print(new_)
     	# print("perimeter violation")
-    	# print(new_x, new_y)
     	# breakpoint()
     	return False
 
     temp = coords[chosen].copy()
     coords[chosen] = np.array([1e7, 1e7], dtype = np.float32)
 
-    pt = np.array([new_x, new_y], dtype = np.float32)
+    pt = np.array([new_x, new_y])
     mindy = np.linalg.norm(coords - pt, axis = 1).min()
     coords[chosen] = temp
 
-    if mindy < 400:
-    	# print("mindy was {}".format(mindy))
+    if mindy <= 400:
     	return False
     # for i in range(coords.shape[0]):
     # 	if i != chosen:
@@ -181,111 +180,6 @@ def both_coords_arent_wrong(x_l, y_l, x_r, y_r):
 
 	return in_perimeter(x_l, y_l) or in_perimeter(x_r, y_r)
 
-
-
-# def fetch_movable_segments(coords, chosen, direction):
-
-# 	x, y = coords[chosen]
-# 	theta = direction
-# 	if np.cos(theta) == 0 or np.sin(theta) == 1:
-# 		theta += np.float32(1e-10) #its improbable that we get the exact angle zero
-
-# 	pts = []
-# 	eps = np.float32(1e-6)
-# 	low_lim = 50+eps
-# 	upper_lim = 3950 - eps
-# 	pts.append((low_lim, y + np.tan(theta)*(low_lim - x) ))
-# 	pts.append((upper_lim, y + np.tan(theta)*(upper_lim - x) ))
-# 	pts.append((x + (1/np.tan(theta))*(low_lim - y), low_lim))
-# 	pts.append((x + (1/np.tan(theta))*(upper_lim - y), upper_lim))
-# 	pts.sort()
-# 	left, right = pts[1], pts[2]
-# 	#using the pt and dir, get boundaries
-# 	# can this be a numpy operation
-# 	# where we directly calc projections
-# 	dir_vec = np.array([np.cos(theta), np.sin(theta)])
-# 	constraints = []
-# 	for i in range(coords.shape[0]):
-# 		if i != chosen:
-# 			x1, y1 = coords[i]
-# 			vec = np.array([x - x1, y - y1])
-# 			jump = -np.matmul(dir_vec, vec)
-
-# 			proj = coords[chosen] + jump*dir_vec
-# 			dis = np.linalg.norm(coords[i] - proj)
-# 			# print(dis, jump)
-# 			if dis >= 400 + eps:
-# 				#safe
-# 				continue
-# 			#problem
-# 			delta = (((400+eps)**2 - dis**2))**np.float32(0.5) + 2*eps
-
-# 			x_l, y_l = proj - delta*dir_vec
-# 			x_r, y_r = proj + delta*dir_vec
-# 			if x_l > x_r:
-# 				x_l, y_l, x_r, y_r = x_r, y_r, x_l, y_l
-
-# 			if both_coords_arent_wrong(x_l, y_l, x_r, y_r):
-# 				constraints.append(((x_l, y_l),(x_r, y_r))) #increasing val of x ke basis pe
-
-# 			# 	print("ignored {}, {} to {}, {}".format(x_l, y_l, x_r, y_r))
-# 			# constraints.append()
- 
-# 			#check proj distance first
-# 	constraints.sort()
-# 	# print()
-# 	# print(left,right)
-# 	# print(constraints)
-# 	#merge constraints
-# 	if len(constraints) == 0:
-# 		# print()
-# 		return [(left, right)]
-
-# 	# merged = [constraints[0]]
-# 	#start
-# 	# cleaned_constraints = []
-
-# 	# merged = [constraints[0]]
-
-# 	# for i in range(1, len(constraints)):
-# 	# 	(x_prev, _) = constraints[i][1]
-# 	# 	(x_next, _) = constraints[i+1][0]
-
-
-# 	ans = []
-# 	if constraints[0][0][0] > left[0]:
-# 		ans.append((left, constraints[0][0]))
-
-# 	last = constraints[0]
-
-# 	for i in range(1,len(constraints)):
-# 		# (x_prev, _) = constraints[i][1]
-# 		(x_prev, _) = last[1]
-# 		(x_next, _) = constraints[i][0]
-
-# 		# if x_prev <= 50:
-# 			# continue
-
-# 		# if x_
-
-
-# 		if x_prev >= x_next:
-# 			# pass #no space in bw
-# 			x_next_next, _ = constraints[i][1]
-# 			if x_next_next > x_prev:
-# 				last = (last[0], constraints[i][1])
-# 		else:
-# 			# print(x_prev, x_next, constraints[i], constraints[i+1])
-# 			ans.append((last[1], constraints[i][0]))
-# 			last = constraints[i]
-
-
-
-# 	rightmost = np.argmax([constraints[i][1][0] for i in range(len(constraints))])
-# 	if constraints[rightmost][1][0] < right[0]:
-# 		ans.append((constraints[rightmost][1], right))
-
-# 	return ans
 
 def fetch_movable_segments(coords, chosen, direction, debug = False):
 	# print(coords.dtype)

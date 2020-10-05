@@ -79,7 +79,6 @@ import warnings
 warnings.filterwarnings("ignore")
 # from constants import *
 
-SMOOTHENING_FACTOR = 0.0001  
 
 
 # def getTurbLoc(turb_loc_file_name):
@@ -609,20 +608,12 @@ def contribution(turb_rad, turb_coords, power_curve, wind_inst_freq,
         mine_on_others[((x_dist <= 0) | ((x_dist > 0) & (y_dist > (turb_rad + 0.05*np.abs(x_dist)))))] = 0.0
         others_on_me[((x_dist >= 0) | ((x_dist < 0) & (y_dist > (turb_rad + 0.05*np.abs(x_dist)))))] = 0.0
     else:
-        indices_on_the_side = (y_dist > (turb_rad + 0.05*np.abs(x_dist)))
-
-        sped_deficit = (C_t_direct)*((turb_rad/(turb_rad + 0.05*np.abs(x_dist)))**2)
-        decay = (1/(1 + (y_dist - (turb_rad + 0.05*np.abs(x_dist)))/SMOOTHENING_FACTOR))
-
-        sped_deficit[indices_on_the_side] = sped_deficit[indices_on_the_side]*decay[indices_on_the_side]
-        
+        sped_deficit = (C_t_direct)*((turb_rad/(turb_rad + 0.05*np.abs(x_dist)))**2)*(1/(1 + np.exp(y_dist/(turb_rad + 0.05*np.abs(x_dist)) - 0.75)))
         mine_on_others = sped_deficit.copy()
         others_on_me = sped_deficit.copy()
 
         mine_on_others[((x_dist <= 0))] = 0.0
         others_on_me[((x_dist >= 0))] = 0.0
-
-
     # others_on_me[((x_dist <= 0) | ((x_dist > 0) & (y_dist > (turb_rad + 0.05*np.abs(x_dist)))))] = 0.0
     # mine_on_others[((x_dist >= 0) | ((x_dist < 0) & (y_dist > (turb_rad + 0.05*np.abs(x_dist)))))] = 0.0
     
@@ -683,7 +674,6 @@ def delta_AEP(turb_rad, turb_coords, power_curve, wind_inst_freq,
 
     new_coords[my_i][0], new_coords[my_i][1] = new_x, new_y
 
-    # print(new_coords.dtype)
     new_contri = contribution(turb_rad, new_coords, power_curve, wind_inst_freq, 
             n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t,
             my_i, smooth_shadows)
@@ -876,18 +866,12 @@ def getAEP(turb_rad, turb_coords, power_curve, wind_inst_freq,
     # For some values of x_dist here RuntimeWarning: divide by zero may occur
     # That occurs for negative x_dist. Those we anyway mark as zeros. 
 
-    if not smooth_shadows:
-        sped_deficit = (1-np.sqrt(1-C_t))*((turb_rad/(turb_rad + 0.05*x_dist))**2)  #yaahn pe we can make x_dist abs, cause baad mei neg ki toh hatadenge waise bhi
-        sped_deficit[((x_dist <= 0) | ((x_dist > 0) & (y_dist > (turb_rad + 0.05*x_dist))))] = 0.0
-    else:
-        # sped_deficit = (1-np.sqrt(1-C_t))*((turb_rad/(turb_rad + 0.05*x_dist))**2)
-        indices_in_wake = (x_dist > 0)
-        indices_on_the_side = (x_dist > 0) & (y_dist > (turb_rad + 0.05*x_dist))
-        sped_deficit = np.zeros(x_dist.shape, dtype = 'float32')
-        sped_deficit[indices_in_wake] = ((1-np.sqrt(1-C_t))*((turb_rad/(turb_rad + 0.05*x_dist))**2))[indices_in_wake]
-        decay = (1/(1 + (y_dist - (turb_rad + 0.05*x_dist))/SMOOTHENING_FACTOR))
-        sped_deficit[indices_on_the_side] = sped_deficit[indices_on_the_side]*decay[indices_on_the_side]
-
+    # if not smooth_shadows:
+    sped_deficit = (1-np.sqrt(1-C_t))*((turb_rad/(turb_rad + 0.05*x_dist))**2)  #yaahn pe we can make x_dist abs, cause baad mei neg ki toh hatadenge waise bhi
+    sped_deficit[((x_dist <= 0) | ((x_dist > 0) & (y_dist > (turb_rad + 0.05*x_dist))))] = 0.0
+    # else:
+    #     sped_deficit = (1-np.sqrt(1-C_t))*((turb_rad/(turb_rad + 0.05*x_dist))**2)*(1/(1 + np.exp(y_dist/(turb_rad + 0.05*np.abs(x_dist)) - 0.75))) #yaahn pe we can make x_dist abs, cause baad mei neg ki toh hatadenge waise bhi
+    #     sped_deficit[((x_dist <= 0))] = 0.0
     # sped_deficit[((x_dist <= 0))] = 0.0
     
     
@@ -1095,10 +1079,10 @@ if __name__ == "__main__":
     turb_rad       =  turb_diam/2 
     
     # Turbine x,y coordinates
-    turb_coords   =  getTurbLoc('../data/turbine_loc_test.csv')
+    turb_coords   =  getTurbLoc('../../data/turbine_loc_test.csv')
     
     # Load the power curve
-    power_curve   =  loadPowerCurve('../data/power_curve.csv')
+    power_curve   =  loadPowerCurve('../../data/power_curve.csv')
     
     # Pass wind data csv file location to function binWindResourceData.
     # Retrieve probabilities of wind instance occurence.
@@ -1119,7 +1103,7 @@ if __name__ == "__main__":
     # for i in range(100):
     print("for the given dummy confirguration")
     for year in [2007, 2008, 2009, 2013, 2014, 2015, 2017]:
-        wind_inst_freq =  binWindResourceData('../data/WindData/wind_data_{}.csv'.format(year))   
+        wind_inst_freq =  binWindResourceData('../../data/WindData/wind_data_{}.csv'.format(year))   
         AEP = getAEP(turb_rad, turb_coords, power_curve, wind_inst_freq, 
                   n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t) 
         print('Total power produced by the wind farm in ',year,' would have been: ', "%.12f"%(AEP), 'GWh')

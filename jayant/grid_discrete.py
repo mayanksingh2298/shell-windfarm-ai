@@ -62,7 +62,7 @@ if __name__ == "__main__":
 
 	old_score, original_deficit= score(coords, wind_inst_freq, True, True)
 	
-	for iterno in tqdm(range(1000000)):
+	for iterno in tqdm(range(10000000000)):
 		chosen = np.random.randint(0,50)
 		old_i, old_j = int(coords[chosen][0] / D) * D, int(coords[chosen][1] / D) * D
 		

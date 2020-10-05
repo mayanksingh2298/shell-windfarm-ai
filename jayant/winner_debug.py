@@ -5,10 +5,11 @@ from datetime import datetime
 import random
 from args import make_args
 from tqdm import tqdm
-from utils import score, initialise_valid, initialise_periphery, min_dist_from_rest, delta_score, delta_check_constraints, fetch_movable_segments
+from utils import score, initialise_valid, initialise_periphery, min_dist_from_rest, delta_score, delta_check_constraints, fetch_movable_segments_wrong
 from utils import min_dis, initialise_file
-from constants import *
+import matplotlib.pyplot as plt
 
+from constants import *
 args = make_args()
 NN = 1
 # GREEDY = 0.7
@@ -60,7 +61,7 @@ if __name__ == "__main__":
 		# get all possible segments
 		# use the midpoints 
 
-		direction = np.random.uniform(0, 2*np.pi)
+		direction = np.float32(np.random.uniform(0, (2*np.pi)))
 		# if np.random.uniform() > GREEDY:
 		# 	direction = np.random.uniform(0, 2*np.pi)
 		# else:
@@ -90,22 +91,46 @@ if __name__ == "__main__":
 
 
 
-		segments = fetch_movable_segments(coords, chosen, direction)
-		
+		segments = fetch_movable_segments_wrong(coords, chosen, direction)
+		# print(segments)
 		possibilities = []
 
 		#uniform samples from each seg
-		# samples = np.random.uniform(size = len(segments))
-		# possibilities += [((samples[i]*a[0]+ (1-samples[i])*b[0]), (samples[i]*a[1] + (1-samples[i])*b[1])) for i,(a,b) in enumerate(segments)]
 		samples = np.random.uniform(size = len(segments)).astype(np.float32)
 		possibilities += [((samples[i]*a[0]+ np.float32(1-samples[i])*b[0]), (samples[i]*a[1] + np.float32(1-samples[i])*b[1])) for i,(a,b) in enumerate(segments)]
-		# possibilities += [(np.float32((a[0]+ b[0])/2), np.float32((a[1] + b[1])/2)) for a,b in segments]
-		# possibilities += [((a[0]), (a[1])) for a,b in segments]
-		# possibilities += [((b[0]), (b[1])) for a,b in segments]
+		possibilities += [(np.float32((a[0]+ b[0])/2), np.float32((a[1] + b[1])/2)) for a,b in segments]
+		possibilities += [((a[0]), (a[1])) for a,b in segments]
+		possibilities += [((b[0]), (b[1])) for a,b in segments]
 		random.shuffle(possibilities)
+		# possibilities += [((samples[i]*a[0]+ (1-samples[i])*b[0]), (samples[i]*a[1] + (1-samples[i])*b[1])) for i,(a,b) in enumerate(segments)]
+		# possibilities += [((samples[i]*a[0]+ (1-samples[i])*b[0]), (samples[i]*a[1] + (1-samples[i])*b[1])) for i,(a,b) in enumerate(segments)]
+		# possibilities += [((samples[i]*a[0]+ (1-samples[i])*b[0]), (samples[i]*a[1] + (1-samples[i])*b[1])) for i,(a,b) in enumerate(segments)]
+		# possibilities += [((samples[i]*a[0]+ (1-samples[i])*b[0]), (samples[i]*a[1] + (1-samples[i])*b[1])) for i,(a,b) in enumerate(segments)]
+
+		#centres
+		# #lefts
+		# less_than_one = np.float32(0.999999)
+		# less_than_one = np.float32(0.999999)
+		# less_than_one = (0.999)
+		# more_than_zero = np.float32(1- less_than_one)
+		# more_than_zero = (1- less_than_one)
+
+		# # #rights
+		# possibilities += [((less_than_one*a[0]+ more_than_zero*b[0]), (less_than_one*a[1] + more_than_zero*b[1])) for a,b in segments]
+		# possibilities += [((more_than_zero*a[0]+ less_than_one*b[0]), (more_than_zero*a[1] + less_than_one*b[1])) for a,b in segments]
+		# possibilities += [((0.999*a[0]+ 0.001*b[0]), (0.999*a[1] + 0.001*b[1])) for a,b in segments]
+		# possibilities += [((0.001*a[0]+ 0.999*b[0]), (0.001*a[1] + 0.999*b[1])) for a,b in segments]
+		
+		entered = False
 		for ind, (new_x, new_y) in enumerate(possibilities):
 			if not delta_check_constraints(coords, chosen, new_x, new_y):
 				print("ERROR")
+				print(ind)
+				print(new_x, new_y)
+				print(min_dist_from_rest(chosen, coords, new_x, new_y))
+				if min_dist_from_rest(chosen, coords, new_x, new_y) < 399:
+					print("found it ", min_dist_from_rest(chosen, coords, new_x, new_y))
+					sys.exit()
 				# sys.exit()
 				continue
 			entered = True

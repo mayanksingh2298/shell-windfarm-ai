@@ -60,7 +60,7 @@ if __name__ == "__main__":
 		# get all possible segments
 		# use the midpoints 
 
-		direction = np.random.uniform(0, 2*np.pi)
+		direction = np.float32(np.random.uniform(0, (2*np.pi)))
 		# if np.random.uniform() > GREEDY:
 		# 	direction = np.random.uniform(0, 2*np.pi)
 		# else:
@@ -95,17 +95,18 @@ if __name__ == "__main__":
 		possibilities = []
 
 		#uniform samples from each seg
-		# samples = np.random.uniform(size = len(segments))
-		# possibilities += [((samples[i]*a[0]+ (1-samples[i])*b[0]), (samples[i]*a[1] + (1-samples[i])*b[1])) for i,(a,b) in enumerate(segments)]
 		samples = np.random.uniform(size = len(segments)).astype(np.float32)
 		possibilities += [((samples[i]*a[0]+ np.float32(1-samples[i])*b[0]), (samples[i]*a[1] + np.float32(1-samples[i])*b[1])) for i,(a,b) in enumerate(segments)]
-		# possibilities += [(np.float32((a[0]+ b[0])/2), np.float32((a[1] + b[1])/2)) for a,b in segments]
-		# possibilities += [((a[0]), (a[1])) for a,b in segments]
-		# possibilities += [((b[0]), (b[1])) for a,b in segments]
+		possibilities += [(np.float32((a[0]+ b[0])/2), np.float32((a[1] + b[1])/2)) for a,b in segments]
+		possibilities += [((a[0]), (a[1])) for a,b in segments]
+		possibilities += [((b[0]), (b[1])) for a,b in segments]
 		random.shuffle(possibilities)
+		
+		entered = False
 		for ind, (new_x, new_y) in enumerate(possibilities):
 			if not delta_check_constraints(coords, chosen, new_x, new_y):
 				print("ERROR")
+				print(min_dist_from_rest(chosen, coords, new_x, new_y))
 				# sys.exit()
 				continue
 			entered = True

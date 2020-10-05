@@ -26,7 +26,7 @@ if __name__ == "__main__":
 		years = [2007, 2008, 2009, 2013, 2014, 2015, 2017]
 	else:
 		years = [args.year]
-	year_wise_dist = np.array([binWindResourceData('../data/WindData/wind_data_{}.csv'.format(year)) for year in years])
+	year_wise_dist = np.array([binWindResourceData('../../data/WindData/wind_data_{}.csv'.format(year)) for year in years])
 	wind_inst_freq = np.mean(year_wise_dist, axis = 0) #over all years
 
 	iteration = -1
@@ -95,14 +95,24 @@ if __name__ == "__main__":
 		possibilities = []
 
 		#uniform samples from each seg
-		# samples = np.random.uniform(size = len(segments))
+		samples = np.random.uniform(size = len(segments))
+		possibilities += [((samples[i]*a[0]+ (1-samples[i])*b[0]), (samples[i]*a[1] + (1-samples[i])*b[1])) for i,(a,b) in enumerate(segments)]
 		# possibilities += [((samples[i]*a[0]+ (1-samples[i])*b[0]), (samples[i]*a[1] + (1-samples[i])*b[1])) for i,(a,b) in enumerate(segments)]
-		samples = np.random.uniform(size = len(segments)).astype(np.float32)
-		possibilities += [((samples[i]*a[0]+ np.float32(1-samples[i])*b[0]), (samples[i]*a[1] + np.float32(1-samples[i])*b[1])) for i,(a,b) in enumerate(segments)]
-		# possibilities += [(np.float32((a[0]+ b[0])/2), np.float32((a[1] + b[1])/2)) for a,b in segments]
-		# possibilities += [((a[0]), (a[1])) for a,b in segments]
-		# possibilities += [((b[0]), (b[1])) for a,b in segments]
+		# possibilities += [((samples[i]*a[0]+ (1-samples[i])*b[0]), (samples[i]*a[1] + (1-samples[i])*b[1])) for i,(a,b) in enumerate(segments)]
+		# possibilities += [((samples[i]*a[0]+ (1-samples[i])*b[0]), (samples[i]*a[1] + (1-samples[i])*b[1])) for i,(a,b) in enumerate(segments)]
+		# possibilities += [((samples[i]*a[0]+ (1-samples[i])*b[0]), (samples[i]*a[1] + (1-samples[i])*b[1])) for i,(a,b) in enumerate(segments)]
+
+		#centres
+		# possibilities += [((a[0]+ b[0])/2, (a[1] + b[1])/2) for a,b in segments]
+		# # #lefts
+		# possibilities += [((0.999*a[0]+ 0.001*b[0]), (0.999*a[1] + 0.001*b[1])) for a,b in segments]
+		# # possibilities += [((0.999999*a[0]+ 0.000001*b[0]), (0.999999*a[1] + 0.000001*b[1])) for a,b in segments]
+		# # # #rights
+		# possibilities += [((0.001*a[0]+ 0.999*b[0]), (0.001*a[1] + 0.999*b[1])) for a,b in segments]
+		# possibilities += [((0.000001*a[0]+ 0.999999*b[0]), (0.000001*a[1] + 0.999999*b[1])) for a,b in segments]
+		
 		random.shuffle(possibilities)
+		entered = False
 		for ind, (new_x, new_y) in enumerate(possibilities):
 			if not delta_check_constraints(coords, chosen, new_x, new_y):
 				print("ERROR")

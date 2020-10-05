@@ -123,9 +123,13 @@ def getTurbLoc(turb_loc_file_name):
     :return
         2D array
     """
-    
-    df = pd.read_csv(turb_loc_file_name, sep=',', dtype = np.float32)
-    turb_coords = df.to_numpy(dtype = np.float32)
+    while True:
+        try:
+            df = pd.read_csv(turb_loc_file_name, sep=',', dtype = np.float32)
+            turb_coords = df.to_numpy(dtype = np.float32)
+            break
+        except:
+            continue
     return(turb_coords)
 
 # def loadPowerCurve(power_curve_file_name):
@@ -683,7 +687,6 @@ def delta_AEP(turb_rad, turb_coords, power_curve, wind_inst_freq,
 
     new_coords[my_i][0], new_coords[my_i][1] = new_x, new_y
 
-    # print(new_coords.dtype)
     new_contri = contribution(turb_rad, new_coords, power_curve, wind_inst_freq, 
             n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t,
             my_i, smooth_shadows)

@@ -15,7 +15,7 @@ args = make_args()
 NN = 1
 GREEDY = 0.7
 
-GREEDY_WINDMILL = 0.8
+GREEDY_WINDMILL = 1
 
 def save_csv(coords):
 	f = open("submissions/{}temp_{}_avg_aep_{}_iterations_{}.csv"
@@ -45,9 +45,9 @@ if __name__ == "__main__":
 	greed = np.array([5 for _ in range(50)])
 	# sys.exit()
 	while(True):
-		if iteration%5000 == 0:
+		if iteration%500 == 0:
 			score(coords,wind_inst_freq,True)
-			time.sleep(5)
+			time.sleep(2)
 
 		if iteration%100000 == 0:
 			print("saving")
@@ -70,33 +70,33 @@ if __name__ == "__main__":
 		# get all possible segments
 		# use the midpoints 
 
-		# direction = np.random.uniform(0, 2*np.pi)
-		if np.random.uniform() > GREEDY:
-			direction = np.random.uniform(0, 2*np.pi)
-		else:
-			x, y = coords[chosen]
-			vi = np.array([x,y])
-			dists = []
-			points = []
-			for i, (x_dash, y_dash) in enumerate(coords):
-			    if i != chosen:
-			       dists.append(((x - x_dash)**2 + (y - y_dash)**2))
-			       points.append((x_dash, y_dash))
-			# dists.sort()
-			indices = np.argpartition(dists, NN)
+		direction = np.random.uniform(0, 2*np.pi)
+		# if np.random.uniform() > GREEDY:
+		# 	direction = np.random.uniform(0, 2*np.pi)
+		# else:
+		# 	x, y = coords[chosen]
+		# 	vi = np.array([x,y])
+		# 	dists = []
+		# 	points = []
+		# 	for i, (x_dash, y_dash) in enumerate(coords):
+		# 	    if i != chosen:
+		# 	       dists.append(((x - x_dash)**2 + (y - y_dash)**2))
+		# 	       points.append((x_dash, y_dash))
+		# 	# dists.sort()
+		# 	indices = np.argpartition(dists, NN)
 
-			# v = 1e-5*np.ones(2)
-			v = np.zeros(2)
-			for i in indices[:NN]:
-			    v += np.array([x - points[i][0], y - points[i][1]])
-			norm = np.linalg.norm(v)
-			if norm < 1e-10:
-				direction = np.random.uniform(0, 2*np.pi)
-			else:		
-				v = v / np.linalg.norm(v)
-				theta_v = np.arccos(v[0])
-				# direction = np.random.normal(theta_v, 0.1)
-				direction = np.random.normal(theta_v, np.pi/12)
+		# 	# v = 1e-5*np.ones(2)
+		# 	v = np.zeros(2)
+		# 	for i in indices[:NN]:
+		# 	    v += np.array([x - points[i][0], y - points[i][1]])
+		# 	norm = np.linalg.norm(v)
+		# 	if norm < 1e-10:
+		# 		direction = np.random.uniform(0, 2*np.pi)
+		# 	else:		
+		# 		v = v / np.linalg.norm(v)
+		# 		theta_v = np.arccos(v[0])
+		# 		# direction = np.random.normal(theta_v, 0.1)
+		# 		direction = np.random.normal(theta_v, np.pi/12)
 				# direction = np.random.normal(theta_v, np.pi/6)
 
 
@@ -106,17 +106,13 @@ if __name__ == "__main__":
 		possibilities = []
 
 		#uniform samples from each seg
-		samples = np.random.uniform(size = len(segments))
-		possibilities += [((samples[i]*a[0]+ (1-samples[i])*b[0]), (samples[i]*a[1] + (1-samples[i])*b[1])) for i,(a,b) in enumerate(segments)]
-
-		# centres
-		possibilities += [((a[0]+ b[0])/2, (a[1] + b[1])/2) for a,b in segments]
-		# #lefts
-		possibilities += [((0.999*a[0]+ 0.001*b[0]), (0.999*a[1] + 0.001*b[1])) for a,b in segments]
-		# # #rights
-		possibilities += [((0.001*a[0]+ 0.999*b[0]), (0.001*a[1] + 0.999*b[1])) for a,b in segments]
+		samples = np.random.uniform(size = len(segments)).astype(np.float32)
+		possibilities += [((samples[i]*a[0]+ np.float32(1-samples[i])*b[0]), (samples[i]*a[1] + np.float32(1-samples[i])*b[1])) for i,(a,b) in enumerate(segments)]
+		possibilities += [(np.float32((a[0]+ b[0])/2), np.float32((a[1] + b[1])/2)) for a,b in segments]
+		possibilities += [((a[0]), (a[1])) for a,b in segments]
+		possibilities += [((b[0]), (b[1])) for a,b in segments]
+		random.shuffle(possibilities)
 		
-
 		for ind, (new_x, new_y) in enumerate(possibilities):
 			if not delta_check_constraints(coords, chosen, new_x, new_y):
 				print("ERROR")

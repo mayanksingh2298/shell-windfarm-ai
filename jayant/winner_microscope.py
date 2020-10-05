@@ -95,14 +95,13 @@ if __name__ == "__main__":
 		possibilities = []
 
 		#uniform samples from each seg
-		# samples = np.random.uniform(size = len(segments))
-		# possibilities += [((samples[i]*a[0]+ (1-samples[i])*b[0]), (samples[i]*a[1] + (1-samples[i])*b[1])) for i,(a,b) in enumerate(segments)]
 		samples = np.random.uniform(size = len(segments)).astype(np.float32)
 		possibilities += [((samples[i]*a[0]+ np.float32(1-samples[i])*b[0]), (samples[i]*a[1] + np.float32(1-samples[i])*b[1])) for i,(a,b) in enumerate(segments)]
-		# possibilities += [(np.float32((a[0]+ b[0])/2), np.float32((a[1] + b[1])/2)) for a,b in segments]
-		# possibilities += [((a[0]), (a[1])) for a,b in segments]
-		# possibilities += [((b[0]), (b[1])) for a,b in segments]
+		possibilities += [(np.float32((a[0]+ b[0])/2), np.float32((a[1] + b[1])/2)) for a,b in segments]
+		possibilities += [((a[0]), (a[1])) for a,b in segments]
+		possibilities += [((b[0]), (b[1])) for a,b in segments]
 		random.shuffle(possibilities)
+		entered = False
 		for ind, (new_x, new_y) in enumerate(possibilities):
 			if not delta_check_constraints(coords, chosen, new_x, new_y):
 				print("ERROR")
@@ -112,11 +111,34 @@ if __name__ == "__main__":
 			# new_score = score(copied, wind_inst_freq)
 			new_score, new_deficit = delta_score(coords, wind_inst_freq, chosen, new_x, new_y, original_deficit)
 			# improvement = new_score - old_score
-
 			if new_score >= best_score:
 				best_score = new_score
 				best_ind = ind
 				best_deficit = new_deficit
+				best_x = new_x
+				best_y = new_y
+
+			if new_score >= old_score:
+				copy_x = new_x
+				copy_y = new_y
+				# print("entered")
+				#miscroscopic analysis of neighbourhood
+				for _ in range(100):
+					dx = np.float32(np.random.normal(0,5))
+					dy = np.float32(np.random.normal(0,5))
+
+					new_x = copy_x + dx
+					new_y = copy_y + dy
+
+					if delta_check_constraints(coords, chosen, new_x, new_y):
+						new_score, new_deficit = delta_score(coords, wind_inst_freq, chosen, new_x, new_y, original_deficit)
+						if new_score >= best_score:
+							# print("improved")
+							best_score = new_score
+							best_ind = ind
+							best_deficit = new_deficit
+							best_x = new_x
+							best_y = new_y
 
 
 		if best_ind == -1:
@@ -130,7 +152,7 @@ if __name__ == "__main__":
 			print("Total iter num: {} ".format(total_iterations))
 			iters_with_no_inc = 0 #because we are considering such consecutive iters	
 			# score(chosen, )
-			coords[chosen][0], coords[chosen][1] = possibilities[best_ind]
+			coords[chosen][0], coords[chosen][1] = best_x, best_y
 			old_score = best_score
 			original_deficit = best_deficit
 			print("average : {}".format(old_score))
