@@ -44,7 +44,7 @@ if __name__ == "__main__":
 	# sys.exit()
 	iters_with_non_pos_increase = 0
 	while(True):
-		if iteration%50000 == 0:
+		if iteration%1000 == 0:
 			print("saving")
 			save_csv(coords)
 

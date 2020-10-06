@@ -42,8 +42,10 @@ if __name__ == "__main__":
 	old_score, original_deficit = score(coords,wind_inst_freq, True, True, False) 
 	file_score = old_score
 	# sys.exit()
+	turbine_counter = [0]*coords.shape[0]
+	DIRECTIONS=36
 	while(True):
-		if iteration%5000 == 0:
+		if iteration%50000 == 0:
 			print("saving")
 			save_csv(coords)
 
@@ -60,7 +62,10 @@ if __name__ == "__main__":
 		# get all possible segments
 		# use the midpoints 
 
-		direction = np.random.uniform(0, 2*np.pi)
+		# direction = np.random.uniform(0, 2*np.pi)
+		direction = np.random.uniform(turbine_counter[chosen]*2*np.pi/DIRECTIONS, (turbine_counter[chosen]+1)*2*np.pi/DIRECTIONS)
+		turbine_counter[chosen] = (turbine_counter[chosen]+1)%DIRECTIONS
+
 		# if np.random.uniform() > GREEDY:
 		# 	direction = np.random.uniform(0, 2*np.pi)
 		# else:
@@ -141,6 +146,7 @@ if __name__ == "__main__":
 			iters_with_no_inc = 0 #because we are considering such consecutive iters	
 			# score(chosen, )
 			coords[chosen][0], coords[chosen][1] = possibilities[best_ind]
+			turbine_counter[chosen] = 0
 			old_score = best_score
 			original_deficit = best_deficit
 			print("average : {}".format(old_score))

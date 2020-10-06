@@ -18,12 +18,14 @@ from datetime import datetime
 args = make_args()
 
 #-------hyperparameters---------
-NPROCS = 6
-NEGATIVE_CHILDREN = 2
+NPROCS = 3
+NEGATIVE_CHILDREN = 0
 CHILDREN_IMPROVEMENT_THRESHOLD = 0
-MASTER_IMPROVEMENT_THRESHOLD = 0.0005
+MASTER_IMPROVEMENT_THRESHOLD = 0
 MASTER_REALLY_IMPROVEMENT_THRESHOLD = 0.01
 YEARS = [2007, 2008, 2009, 2013, 2014, 2015, 2017]
+# YEARS = [2015, 2017]
+
 NEGATIVE_NON_POS_INC_THRESHOLD = 10000
 #-------hyperparameters---------
 #no nengative processes are reinitialized at MASTER_IMPROVEMENT_THRESHOLD
@@ -42,58 +44,67 @@ def master(wind_inst_freq,master_to_child_qlis,child_to_master_qlis):
 	master_score = score(coords,wind_inst_freq)
 	current_time = datetime.now().strftime("%H:%M:%S")
 	print(current_time,"- Initial score:",master_score)
-
+	it = 0
 	while True:
-		# calculate the score of master.csv
-		coords = getTurbLoc(WINNER_CSV)
-		master_score = score(coords,wind_inst_freq)
+		it+=1
+		try:
+			# calculate the score of master.csv
+			coords = getTurbLoc(WINNER_CSV)
+			master_score = score(coords,wind_inst_freq)
 
-		# get a lis of all children files and find best improved score over master
-		children_files = os.listdir(CHILDREN_DATA_ROOT)
-		best_ind = -1
-		best_score = -1
-		for ind, file in enumerate(children_files):
-			# get turbine coordinates of child file
-			coords = getTurbLoc(os.path.join(CHILDREN_DATA_ROOT,file))
+			# get a lis of all children files and find best improved score over master
+			children_files = os.listdir(CHILDREN_DATA_ROOT)
+			best_ind = -1
+			best_score = -1
+			for ind, file in enumerate(children_files):
+				# get turbine coordinates of child file
+				coords = getTurbLoc(os.path.join(CHILDREN_DATA_ROOT,file))
 
-			# score these coordinates
-			curr_score = score(coords,wind_inst_freq)
-			if(curr_score > master_score + MASTER_IMPROVEMENT_THRESHOLD and curr_score > best_score):
-				# this is a really good file
-				best_ind = ind
-				best_score = curr_score
+				# score these coordinates
+				curr_score = score(coords,wind_inst_freq)
+				if(curr_score > master_score):
+					save_csv(coords,"data/temp_"+str(curr_score)+"_"+str(it)+".csv")
 
-		if best_ind==-1: # no improvement has happened
-			time.sleep(5) # rest a while baby girl
-			continue
-		else:
-			best_file = os.path.join(CHILDREN_DATA_ROOT,children_files[best_ind])
-			best_coords = getTurbLoc(best_file)
-			current_time = datetime.now().strftime("%H:%M:%S")
-			print(current_time,"- New score:",best_score,"from file:",best_file)
-			# write this file to winner.csv
-			save_csv(best_coords,WINNER_CSV)
+				if(curr_score > master_score + MASTER_IMPROVEMENT_THRESHOLD and curr_score > best_score):
+					# this is a really good file
+					best_ind = ind
+					best_score = curr_score
 
-			#send a signal to each non-negative child process
-			for child in range(NEGATIVE_CHILDREN,NPROCS):
-				master_to_child_qlis[child].put(1)
-			#send a signal to negative children if a really good improvement
-			if(best_score>=master_score+MASTER_REALLY_IMPROVEMENT_THRESHOLD):
-				print("Really good!")
-				for child in range(NEGATIVE_CHILDREN):
+			if best_ind==-1: # no improvement has happened
+				time.sleep(5) # rest a while baby girl
+				continue
+			else:
+				best_file = os.path.join(CHILDREN_DATA_ROOT,children_files[best_ind])
+				best_coords = getTurbLoc(best_file)
+				current_time = datetime.now().strftime("%H:%M:%S")
+				print(current_time,"- New score:",best_score,"from file:",best_file)
+				# write this file to winner.csv
+				save_csv(best_coords,WINNER_CSV)
+
+
+				#send a signal to each non-negative child process
+				for child in range(NEGATIVE_CHILDREN,NPROCS):
 					master_to_child_qlis[child].put(1)
+				#send a signal to negative children if a really good improvement
+				if(best_score>=master_score+MASTER_REALLY_IMPROVEMENT_THRESHOLD):
+					print("Really good!")
+					for child in range(NEGATIVE_CHILDREN):
+						master_to_child_qlis[child].put(1)
 
-			#wait for ack from each non-negative child process before proceeding again
-			for child in range(NEGATIVE_CHILDREN,NPROCS):
-				child_to_master_qlis[child].get()
-			#wait for ack from negative children, if really good improvement
-			if(best_score>=master_score+MASTER_REALLY_IMPROVEMENT_THRESHOLD):
-				for child in range(NEGATIVE_CHILDREN):
+				#wait for ack from each non-negative child process before proceeding again
+				for child in range(NEGATIVE_CHILDREN,NPROCS):
 					child_to_master_qlis[child].get()
+				#wait for ack from negative children, if really good improvement
+				if(best_score>=master_score+MASTER_REALLY_IMPROVEMENT_THRESHOLD):
+					for child in range(NEGATIVE_CHILDREN):
+						child_to_master_qlis[child].get()
+		except:
+			continue
 					
 
 
 def local_search(wind_inst_freq,child,master_to_child_qlis,child_to_master_qlis):
+	f = open(os.path.join("data",str(child)+".log"),'w')
 	while True:
 		coords = getTurbLoc(WINNER_CSV)	
 		iteration = -1
@@ -157,12 +168,14 @@ def local_search(wind_inst_freq,child,master_to_child_qlis,child_to_master_qlis)
 					save_csv(coords,os.path.join(CHILDREN_DATA_ROOT,"{}.csv".format(child)))
 				old_score = best_score
 				original_deficit = best_deficit
-				# print(child,iteration,best_score)
+				print(child,iteration,best_score,file=f)
+				f.flush()
 
 				# print("average : {}".format(old_score))
 				# print()
 
 def local_search_negative(wind_inst_freq,child,master_to_child_qlis,child_to_master_qlis):
+	f = open(os.path.join("data",str(child)+".log"),'w')
 	while True:
 		coords = getTurbLoc(WINNER_CSV)
 		iteration = -1
@@ -224,7 +237,7 @@ def local_search_negative(wind_inst_freq,child,master_to_child_qlis,child_to_mas
 				coords[chosen][0], coords[chosen][1] = possibilities[best_ind]
 				if(best_score>global_best_score):
 					save_csv(coords,os.path.join(CHILDREN_DATA_ROOT,"{}.csv".format(child)))
-					print("child:{} global_best_score:{}".format(child,best_score))
+					#print("child:{} global_best_score:{}".format(child,best_score))
 					global_best_score = best_score
 
 				if (best_score - old_score) == 0:
@@ -233,6 +246,8 @@ def local_search_negative(wind_inst_freq,child,master_to_child_qlis,child_to_mas
 					iters_with_non_pos_increase = 0
 				old_score = best_score
 				original_deficit = best_deficit
+				print(child,iteration,best_score,file=f)
+				f.flush()
 
 
 

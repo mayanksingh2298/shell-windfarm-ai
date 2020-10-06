@@ -551,6 +551,7 @@ def contribution(turb_rad, turb_coords, power_curve, wind_inst_freq,
     
     # big oh 540 x 50 
     # print(cos_dir.shape, sin_dir.shape. turb_coords.shape)
+    # make it k x 540 x 50 x 2 by expanding cos_dir and do the matrix multiplications appropriately
     rotate_coords[:,:,0] =  np.matmul(cos_dir, np.transpose(turb_coords[:,0].reshape(n_turbs,1))) - \
                            np.matmul(sin_dir, np.transpose(turb_coords[:,1].reshape(n_turbs,1)))
     rotate_coords[:,:,1] =  np.matmul(sin_dir, np.transpose(turb_coords[:,0].reshape(n_turbs,1))) +\
