@@ -4,7 +4,7 @@ import numpy as np
 from constants import *
 import random
 import pandas as pd
-import time
+from constants import wind_inst_freq
 
 def initialise_valid():
 	#for now return the same everytime to compare methods etc
@@ -45,10 +45,10 @@ def initialise_file(filename):
 
 def initialise_periphery():
 	data = []
-	delta = (3900 - 2*300)/3
+	delta = (3900 - 2*300)/8
 
 	#36 pts on the periphery
-	for i in range(4):
+	for i in range(9):
 		data.append((50 + 300 + delta*i,50 + 1) )
 		data.append((50 + 300 + delta*i,3950 - 1) )
 		data.append((50 +1, 50 + 300 + delta*i) )
@@ -58,8 +58,8 @@ def initialise_periphery():
 	# margin = 402 #atleast itna, and less than 1200 ish
 	margin = 1000
 	inner_dis = (3900 - margin*2)/3
-	for i in range(2):
-		for j in range(2):
+	for i in range(4):
+		for j in range(4):
 			x = 50 + margin + i*inner_dis
 			y = 50 + margin + j*inner_dis
 			data.append((x,y)) 
@@ -109,6 +109,49 @@ def score(coords, wind_inst_freq, to_print = False, with_deficit = False, contin
 	else:
 		return AEP
 
+
+def score_pdfo(coords):
+	coords = coords.reshape(-1,2)
+	ret = getAEP(turb_rad, coords, power_curve, wind_inst_freq, 
+		n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t, False, False, False) 
+	return -ret
+
+def score_cma(coords):
+	# coords shape is 100
+	if(len(coords.shape)==1):
+		coords = coords.reshape(-1,2)
+		ret = getAEP(turb_rad, coords, power_curve, wind_inst_freq, 
+		n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t, False, False, False) 
+		return -ret
+
+	# coords shape is n x 100
+	lis = []
+	for i in range(coords.shape[0]):
+		coords1 = coords[i]
+		coords1 = coords1.reshape(-1,2)
+		ret = getAEP(turb_rad, coords1, power_curve, wind_inst_freq, 
+			n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t, False, False, False) 
+		lis.append(-ret)
+	return lis
+
+def score_pso(coords):
+	# coords shape is 100
+	# if(len(coords.shape)==1):
+	# 	coords = coords.reshape(-1,2)
+	# 	ret = getAEP(turb_rad, coords, power_curve, wind_inst_freq, 
+	# 	n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t, False, False, False) 
+	# 	return -ret
+
+	# coords shape is n x 100
+	lis = []
+	for i in range(coords.shape[0]):
+		coords1 = coords[i]
+		coords1 = coords1.reshape(-1,2)
+		ret = getAEP(turb_rad, coords1, power_curve, wind_inst_freq, 
+			n_wind_instances, cos_dir, sin_dir, wind_sped_stacked, C_t, False, False, False) 
+		lis.append(-ret)
+	return np.array(lis)
+
 def delta_score(coords, wind_inst_freq, chosen, new_x, new_y, original_deficit,continuous = False,  smooth_shadows = False):
 	return delta_AEP(turb_rad, coords, power_curve, wind_inst_freq, 
 	            n_wind_instances, cos_dir1, sin_dir1, wind_sped_stacked, C_t_direct,
@@ -120,20 +163,9 @@ def delta_loss(coords, wind_inst_freq, chosen, new_x, new_y, original_deficit):
 	            chosen, new_x, new_y, original_deficit)
 
 def min_dist_from_rest(chosen, coords, new_x, new_y):
-	# min_d = min([(new_x - coords[i][0])**2 + (new_y - coords[i][1])**2 if i!=chosen else MAXIMUM for i in range(50)])
-	# min_d = min_d**0.5
-	temp = coords[chosen].copy()
-	coords[chosen] = np.array([1e7, 1e7], dtype = np.float32)
-
-	pt = np.array([new_x, new_y], dtype = np.float32)
-	mindy = np.linalg.norm(coords - pt, axis = 1).min()
-	# print(mindy.dtype)
-	coords[chosen] = temp
-
-	if mindy < 400:
-		# print("mindy was {}".format(mindy))
-		return mindy
-	return mindy
+	min_d = min([(new_x - coords[i][0])**2 + (new_y - coords[i][1])**2 if i!=chosen else MAXIMUM for i in range(50)])
+	min_d = min_d**0.5
+	return min_d
 
 def min_dis(coords):
     return min([min([np.linalg.norm(coords[i] - coords[j]) for i in range(j+1,50)]) for j in range(50-1)])
@@ -143,21 +175,20 @@ def ignore_speed(arr):
 
 
 def delta_check_constraints(coords, chosen, new_x, new_y):
-    if not (50 <= new_x <= 3950 and 50 <= new_y <= 3950):
+    if not (50 < new_x < 3950 and 50 < new_y < 3950):
+    	# print(new_)
     	# print("perimeter violation")
-    	# print(new_x, new_y)
     	# breakpoint()
     	return False
 
     temp = coords[chosen].copy()
     coords[chosen] = np.array([1e7, 1e7], dtype = np.float32)
 
-    pt = np.array([new_x, new_y], dtype = np.float32)
+    pt = np.array([new_x, new_y])
     mindy = np.linalg.norm(coords - pt, axis = 1).min()
     coords[chosen] = temp
 
-    if mindy < 400:
-    	# print("mindy was {}".format(mindy))
+    if mindy <= 400:
     	return False
     # for i in range(coords.shape[0]):
     # 	if i != chosen:
@@ -172,7 +203,7 @@ def delta_check_constraints(coords, chosen, new_x, new_y):
 	# return (known, )
 
 def in_perimeter(x,y):
-	return np.float32(50)<=x<=np.float32(3950) and np.float32(50)<=y<=np.float32(3950)
+	return 50<x<3950 and 50<y<3950
 
 def both_coords_arent_wrong(x_l, y_l, x_r, y_r):
 	# if max(x_l, x_r) <= 50 or min(x_l, x_r) >= 3950 or max(y_l,y_r) <= 50 or min(y_l, y_r) >= 3950:
@@ -182,184 +213,54 @@ def both_coords_arent_wrong(x_l, y_l, x_r, y_r):
 	return in_perimeter(x_l, y_l) or in_perimeter(x_r, y_r)
 
 
+def fetch_movable_segments(coords, chosen, direction):
 
-# def fetch_movable_segments(coords, chosen, direction):
-
-# 	x, y = coords[chosen]
-# 	theta = direction
-# 	if np.cos(theta) == 0 or np.sin(theta) == 1:
-# 		theta += np.float32(1e-10) #its improbable that we get the exact angle zero
-
-# 	pts = []
-# 	eps = np.float32(1e-6)
-# 	low_lim = 50+eps
-# 	upper_lim = 3950 - eps
-# 	pts.append((low_lim, y + np.tan(theta)*(low_lim - x) ))
-# 	pts.append((upper_lim, y + np.tan(theta)*(upper_lim - x) ))
-# 	pts.append((x + (1/np.tan(theta))*(low_lim - y), low_lim))
-# 	pts.append((x + (1/np.tan(theta))*(upper_lim - y), upper_lim))
-# 	pts.sort()
-# 	left, right = pts[1], pts[2]
-# 	#using the pt and dir, get boundaries
-# 	# can this be a numpy operation
-# 	# where we directly calc projections
-# 	dir_vec = np.array([np.cos(theta), np.sin(theta)])
-# 	constraints = []
-# 	for i in range(coords.shape[0]):
-# 		if i != chosen:
-# 			x1, y1 = coords[i]
-# 			vec = np.array([x - x1, y - y1])
-# 			jump = -np.matmul(dir_vec, vec)
-
-# 			proj = coords[chosen] + jump*dir_vec
-# 			dis = np.linalg.norm(coords[i] - proj)
-# 			# print(dis, jump)
-# 			if dis >= 400 + eps:
-# 				#safe
-# 				continue
-# 			#problem
-# 			delta = (((400+eps)**2 - dis**2))**np.float32(0.5) + 2*eps
-
-# 			x_l, y_l = proj - delta*dir_vec
-# 			x_r, y_r = proj + delta*dir_vec
-# 			if x_l > x_r:
-# 				x_l, y_l, x_r, y_r = x_r, y_r, x_l, y_l
-
-# 			if both_coords_arent_wrong(x_l, y_l, x_r, y_r):
-# 				constraints.append(((x_l, y_l),(x_r, y_r))) #increasing val of x ke basis pe
-
-# 			# 	print("ignored {}, {} to {}, {}".format(x_l, y_l, x_r, y_r))
-# 			# constraints.append()
- 
-# 			#check proj distance first
-# 	constraints.sort()
-# 	# print()
-# 	# print(left,right)
-# 	# print(constraints)
-# 	#merge constraints
-# 	if len(constraints) == 0:
-# 		# print()
-# 		return [(left, right)]
-
-# 	# merged = [constraints[0]]
-# 	#start
-# 	# cleaned_constraints = []
-
-# 	# merged = [constraints[0]]
-
-# 	# for i in range(1, len(constraints)):
-# 	# 	(x_prev, _) = constraints[i][1]
-# 	# 	(x_next, _) = constraints[i+1][0]
-
-
-# 	ans = []
-# 	if constraints[0][0][0] > left[0]:
-# 		ans.append((left, constraints[0][0]))
-
-# 	last = constraints[0]
-
-# 	for i in range(1,len(constraints)):
-# 		# (x_prev, _) = constraints[i][1]
-# 		(x_prev, _) = last[1]
-# 		(x_next, _) = constraints[i][0]
-
-# 		# if x_prev <= 50:
-# 			# continue
-
-# 		# if x_
-
-
-# 		if x_prev >= x_next:
-# 			# pass #no space in bw
-# 			x_next_next, _ = constraints[i][1]
-# 			if x_next_next > x_prev:
-# 				last = (last[0], constraints[i][1])
-# 		else:
-# 			# print(x_prev, x_next, constraints[i], constraints[i+1])
-# 			ans.append((last[1], constraints[i][0]))
-# 			last = constraints[i]
-
-
-
-# 	rightmost = np.argmax([constraints[i][1][0] for i in range(len(constraints))])
-# 	if constraints[rightmost][1][0] < right[0]:
-# 		ans.append((constraints[rightmost][1], right))
-
-# 	return ans
-
-def fetch_movable_segments(coords, chosen, direction, debug = False):
-	# print(coords.dtype)
-	if debug:
-		breakpoint()
 	x, y = coords[chosen]
-	# print(x.dtype)
 	theta = direction
 	if np.cos(theta) == 0 or np.sin(theta) == 1:
 		theta += np.float32(1e-10) #its improbable that we get the exact angle zero
- 
-	pts = []
-	eps = np.float32(1e-3)
-	low_lim = np.float32(50+eps)
-	upper_lim = np.float32(3950 - eps)
 
-	# x = 3950 , x = 50, y = 3950 , y = 50
-	a = y + np.tan(theta, dtype = np.float32)*(low_lim - x) 
-	# print(a.dtype)
-	# breakpoint()
-	pts.append((low_lim, y + np.tan(theta, dtype = np.float32)*(low_lim - x) ))
-	pts.append((upper_lim, y + np.tan(theta, dtype = np.float32)*(upper_lim - x) ))
-	pts.append((x + (1/np.tan(theta, dtype = np.float32))*(low_lim - y), low_lim))
-	pts.append((x + (1/np.tan(theta, dtype = np.float32))*(upper_lim - y), upper_lim))
+	pts = []
+	eps = np.float32(1e-6)
+	low_lim = 50+eps
+	upper_lim = 3950 - eps
+	pts.append((low_lim, y + np.tan(theta)*(low_lim - x) ))
+	pts.append((upper_lim, y + np.tan(theta)*(upper_lim - x) ))
+	pts.append((x + (1/np.tan(theta))*(low_lim - y), low_lim))
+	pts.append((x + (1/np.tan(theta))*(upper_lim - y), upper_lim))
 	pts.sort()
 	left, right = pts[1], pts[2]
 	#using the pt and dir, get boundaries
 	# can this be a numpy operation
 	# where we directly calc projections
-	dir_vec = np.array([np.cos(theta), np.sin(theta)], dtype = np.float32)
-	# dir_vec = np.array([np.cos(theta), np.sin(theta)])
+	dir_vec = np.array([np.cos(theta), np.sin(theta)])
 	constraints = []
 	for i in range(coords.shape[0]):
 		if i != chosen:
 			x1, y1 = coords[i]
-			vec = np.array([x - x1, y - y1], dtype = np.float32)
-			# vec = np.array([x - x1, y - y1])
+			vec = np.array([x - x1, y - y1])
 			jump = -np.matmul(dir_vec, vec)
 
 			proj = coords[chosen] + jump*dir_vec
 			dis = np.linalg.norm(coords[i] - proj)
-			# print(dis.dtype)
 			# print(dis, jump)
-			if dis > 400:
+			if dis >= 400 + eps:
 				#safe
 				continue
 			#problem
-			# delta = np.float32((((np.float32(400))**2 - dis**2))**np.float32(0.5)) + eps
-			delta = np.power(np.power(np.float32(400), np.float32(2), dtype = np.float32) - np.power(dis, np.float32(2), dtype = np.float32), np.float32(0.5), dtype = np.float32)
-			delta += eps
+			delta = (((400+eps)**2 - dis**2))**np.float32(0.5) + 2*eps
+
 			x_l, y_l = proj - delta*dir_vec
 			x_r, y_r = proj + delta*dir_vec
-			# print(x_r.dtype)
 			if x_l > x_r:
 				x_l, y_l, x_r, y_r = x_r, y_r, x_l, y_l
 
-			# print("considered {}".format((x_l, y_l, x_r, y_r)))
-			# print(np.linalg.norm(np.array([x_l, y_l]) - coords[i]))
-			# print(np.linalg.norm(np.array([x_r, y_r]) - coords[i]))
-
-
 			if both_coords_arent_wrong(x_l, y_l, x_r, y_r):
 				constraints.append(((x_l, y_l),(x_r, y_r))) #increasing val of x ke basis pe
-				# print("it was kept")
-			else:
-				return [] 
-				# print(delta_check_constraints(coords, chosen, x_l, y_l))
-				# print(delta_check_constraints(coords, chosen, x_r, y_r))
-				# time.sleep(0.6)
 			# else:
 			# 	print("ignored {}, {} to {}, {}".format(x_l, y_l, x_r, y_r))
 			# constraints.append()
-			if debug:
-				breakpoint()
+ 
 			#check proj distance first
 	constraints.sort()
 	# print()

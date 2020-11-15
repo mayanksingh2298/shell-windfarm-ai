@@ -23,8 +23,9 @@ if RANDOM_EPS:
 	lim_sizes = ["teeny tiny", "super small", "small", "medium", "large"]
 
 def save_csv(coords):
-	f = open("submissions/temp_{}_avg_aep_{}m_jump_{}_directions_{}_iterations_{}.csv"
-		.format(score(coords, wind_inst_freq), EPSILON,DIRECTIONS,iteration, str(datetime.now()).replace(':','')), "w")
+	# f = open("submissions/temp_{}_avg_aep_{}m_jump_{}_directions_{}_iterations_{}.csv"
+		# .format(score(coords, wind_inst_freq), EPSILON,DIRECTIONS,iteration, str(datetime.now()).replace(':','')), "w")
+	f = open("submissions/ati.csv", "w")
 	np.savetxt(f, coords, delimiter=',', header='x,y', comments='', fmt='%1.8f')
 	f.close()
 
@@ -72,8 +73,10 @@ if __name__ == "__main__":
 
 	# sys.exit()
 
-	# coords = initialise_periphery()
-	coords = initialise_valid()
+	coords = initialise_periphery()
+	save_csv(coords)
+	exit()	
+	# coords = initialise_valid()
 
 	DELTA = (2*np.pi)/DIRECTIONS
 

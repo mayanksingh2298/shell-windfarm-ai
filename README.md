@@ -1,7 +1,14 @@
 # shell-windfarm-ai
-Optimizing the layout of a wind farm is an interesting and complex optimization problem. The key challenge arises due to the high dimensionality, complex multimodality and discontinuous nature of the search space. Hence, optimizing the layout analytically is impossible. A smarter approach towards solving this problem is through optimization strategies and computer algorithms.
+This is the dev version of the repository which contains all the code written by authors during the competition.
 
-# Getting Started
-1. Install requirements
-2. cd `evaluator`
-3. `python3 Farm_Evaluator_Vec.py`
+It's not meant to be used by the public because the code might be broken at some places(although we have tried to be very careful and have also added documentation), but what can stop the curious eye.
+
+## Structure
+1. Atishya
+2. rajas
+3. jayant
+4. mayank
+5. data - contains the data given by shell
+6. problem_statement - contains the original problem statement
+
+Visit the folder of each author to see what they had written.
