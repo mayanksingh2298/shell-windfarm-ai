@@ -33,5 +33,6 @@ python3 main-pdfo.py <path to initial placement>
 	4. CHILDREN_IMPROVEMENT_THRESHOLD - child process will update its local file if it sees atleast this much improvement
 	5. MASTER_IMPROVEMENT_THRESHOLD - master process will update the global winner if it sees atleast this much improvement
 ```
+cd parallel
 python3 main.py
 ```
